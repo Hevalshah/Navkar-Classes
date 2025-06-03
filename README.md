@@ -1,2 +1,2 @@
 # Navkar-Classes
-# A coaching instituion for students 5th to 12 th standard
+# A coaching institution for students 5th to 12 th standard

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navkar Classes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        body {
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: #5C4033;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        nav ul li {
+            margin: 0 20px;
+        }
+        nav ul li a {
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        .login-btn {
+            background: #FFFFFF;
+            color: #5C4033;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .marquee-wrapper {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 10s linear infinite;
+        }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        section {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 80px 50px 50px;
+            position: relative;
+            margin-bottom: 40px;
+        }
+        #home {
+            background: url('https://via.placeholder.com/1920x1080?text=NavkarClassroomStudents') center/cover no-repeat;
+            position: relative;
+            color: #000;
+        }
+        #home::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        #home .logo-container {
+            position: relative;
+            text-align: center;
+        }
+        #home .swoosh {
+            width: 120px;
+            height: 50px;
+            background: url('https://via.placeholder.com/120x50?text=NavkarSwooshOrange') center/contain no-repeat;
+            margin: 0 auto 10px;
+        }
+        #home h1 {
+            font-size: 60px;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+        #about, #reviews, #contact {
+            background: #fff;
+        }
+        .section-title {
+            font-size: 36px;
+            margin-bottom: 30px;
+            color: #5C4033;
+        }
+        .grid {
+            display: grid;
+            gap: 20px;
+            width: 90%;
+            max-width: 1200px;
+        }
+        .box {
+            background: #8B5A2B;
+            color: #FFFFFF;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #about .grid {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, auto);
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        #about .box {
+            aspect-ratio: 1 / 1;
+        }
+        #reviews .grid {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, auto);
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        #reviews .box {
+            aspect-ratio: 1 / 1;
+        }
+        #contact .content {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            gap: 40px;
+        }
+        #contact .content > div {
+            flex: 1;
+        }
+        #contact .contact-info {
+            background: #8B5A2B;
+            color: #FFFFFF;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #contact form {
+            background: #8B5A2B;
+            padding: 20px;
+            border-radius: 10px;
+            color: #FFFFFF;
+        }
+        #contact form input, #contact form select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        #contact form button {
+            background: #5C4033;
+            color: #FFFFFF;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            #about .grid, #reviews .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            #contact .content {
+                flex-direction: column;
+            }
+            #home h1 {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About us</a></li>
+                <li><a href="#reviews">Reviews</a></li>
+                <li><a href="#contact">Contact us</a></li>
+            </ul>
+        </nav>
+        <button class="login-btn" onclick="alert('Login functionality coming soon!')">Login</button>
+    </header>
+
+    <section id="home">
+        <div class="logo-container">
+            <div class="swoosh"></div>
+            <h1>NAVKAR CLASSES</h1>
+        </div>
+    </section>
+
+    <section id="about">
+        <div class="section-title marquee-wrapper"><span class="marquee-content">About us</span></div>
+        <div class="grid">
+            <div class="box">
+                <h3>About Classes</h3>
+                <ul>
+                    <li>15 years of experience in Gujarati Medium education.</li>
+                    <li>Coaching available for Grades 5 to 10 & 11 & 12 Commerce.</li>
+                    <li>Focus on academic improvement and personal growth of students.</li>
+                    <li>Students are treated like family, ensuring a nurturing environment.</li>
+                </ul>
+            </div>
+            <div class="box">
+                <h3>Academic Support & Resources</h3>
+                <ul>
+                    <li>Team of well-educated and dedicated faculties.</li>
+                    <li>Best study material developed in-house by Navkar Classes faculties.</li>
+                    <li>Availability of video lectures for better understanding.</li>
+                    <li>Extra doubt-solving sessions for students.</li>
+                    <li>Chapter-wise tests, full syllabus tests, and final exams for preparation.</li>
+                </ul>
+            </div>
+            <div class="box">
+                <h3>Student-Friendly Environment</h3>
+                <ul>
+                    <li>Faculties are easily approachable for help and guidance.</li>
+                    <li>A friendly, supportive, and motivating atmosphere.</li>
+                    <li>Continuous motivation and personal attention to each student.</li>
+                </ul>
+            </div>
+            <div class="box">
+                <h3>Extracurricular Activities and Rewards</h3>
+                <ul>
+                    <li>Celebration of festivals like Diwali and Navratri with students.</li>
+                    <li>Annual picnic organized to build stronger bonds.</li>
+                    <li>Prizes awarded to high-performing students as encouragement.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="reviews">
+        <div class="section-title marquee-wrapper"><span class="marquee-content">Reviews</span></div>
+        <div class="grid">
+            <div class="box"><h3>Student-1</h3><p>This is a review from Student-1</p></div>
+            <div class="box"><h3>Student-3</h3><p>This is a review from Student-3</p></div>
+            <div class="box"><h3>Student-5</h3><p>This is a review from Student-5</p></div>
+            <div class="box"><h3>Student-7</h3><p>This is a review from Student-7</p></div>
+            <div class="box"><h3>Student-2</h3><p>This is a review from Student-2</p></div>
+            <div class="box"><h3>Student-4</h3><p>This is a review from Student-4</p></div>
+            <div class="box"><h3>Student-6</h3><p>This is a review from Student-6</p></div>
+            <div class="box"><h3>Student-n</h3><p>This is a review from Student-n</p></div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <div class="section-title marquee-wrapper"><span class="marquee-content">Contact us</span></div>
+        <div class="content">
+            <div class="contact-info">
+                <h3>Contact Us</h3>
+                <p><strong>Address</strong><br>B-1/10 G.I.D.C Colony, Opp. ESI Hospital, Manjalpur Road, Manjalpur, Vadodara, Gujarat-390011</p>
+                <p><strong>Phone</strong><br>8000222004 / 8735810902</p>
+            </div>
+            <form id="enroll-form">
+                <h3>Want to enroll with us?</h3>
+                <input type="text" id="name" placeholder="Name" required>
+                <input type="email" id="email" placeholder="Email-id" required>
+                <div style="display: flex; gap: 10px;">
+                    <select required>
+                        <option value="+91">+91</option>
+                    </select>
+                    <input type="tel" id="mobile" placeholder="Mobile" pattern="[0-9]{10}" required>
+                </div>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        // GSAP Animations
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Home Section Animations
+        gsap.from("#home .swoosh", {
+            opacity: 0,
+            scale: 0.8,
+            duration: 1,
+            ease: "power2.out"
+        });
+        gsap.from("#home h1", {
+            opacity: 0,
+            y: 20,
+            duration: 1,
+            delay: 0.5,
+            ease: "power2.out"
+        });
+
+        // Parallax Effect for Home Background
+        gsap.to("#home", {
+            scrollTrigger: {
+                trigger: "#home",
+                scrub: true
+            },
+            backgroundPosition: "50% 100%",
+        });
+
+        // About Section Animations
+        gsap.from("#about .box", {
+            scrollTrigger: {
+                trigger: "#about",
+                start: "top 80%"
+            },
+            opacity: 0,
+            scale: 0.9,
+            stagger: 0.2,
+            duration: 0.8,
+            ease: "power2.out"
+        });
+
+        // Reviews Section Animations
+        gsap.from("#reviews .box", {
+            scrollTrigger: {
+                trigger: "#reviews",
+                start: "top 80%"
+            },
+            opacity: 0,
+            scale: 0.9,
+            stagger: 0.2,
+            duration: 0.8,
+            ease: "power2.out"
+        });
+
+        // Contact Section Animations
+        gsap.from("#contact .contact-info", {
+            scrollTrigger: {
+                trigger: "#contact",
+                start: "top 80%"
+            },
+            opacity: 0,
+            scale: 0.9,
+            duration: 0.8,
+            ease: "power2.out"
+        });
+        gsap.from("#contact form", {
+            scrollTrigger: {
+                trigger: "#contact",
+                start: "top 80%"
+            },
+            opacity: 0,
+            scale: 0.9,
+            duration: 0.8,
+            delay: 0.3,
+            ease: "power2.out"
+        });
+
+        // Section Transitions (without snapping)
+        gsap.utils.toArray("section").forEach((section, i) => {
+            ScrollTrigger.create({
+                trigger: section,
+                start: "top top",
+                end: "bottom top",
+                onEnter: () => {
+                    gsap.to(section, { opacity: 1, y: 0, duration: 0.5 });
+                },
+                onLeave: () => {
+                    gsap.to(section, { opacity: 0.8, duration: 0.5 });
+                },
+                onEnterBack: () => {
+                    gsap.to(section, { opacity: 1, y: 0, duration: 0.5 });
+                },
+                onLeaveBack: () => {
+                    gsap.to(section, { opacity: 0.8, duration: 0.5 });
+                }
+            });
+        });
+
+        // Form Validation
+        document.getElementById("enroll-form").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const mobile = document.getElementById("mobile").value;
+            if (name && email && mobile.match(/^[0-9]{10}$/)) {
+                alert("Form submitted successfully!");
+            } else {
+                alert("Please fill all fields correctly!");
+            }
+        });
+    </script>
+</body>
+</html>

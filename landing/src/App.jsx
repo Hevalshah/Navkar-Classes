@@ -17,7 +17,7 @@ function App() {
       <div className="flex w-full flex-col items-center justify-center gap-2 bg-default-background px-6 py-6 mobile:px-2 mobile:py-2">
         <BoldNavbar className="mobile:hidden" />
         <BoldNavbarMobile className="hidden mobile:flex" />
-      </div>   
+      </div>
 
       {/* Hero Section */}
       <div className="flex w-full flex-col items-center justify-center gap-8 bg-default-background px-6 pt-40 pb-24">

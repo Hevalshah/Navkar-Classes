@@ -1,0 +1,473 @@
+/* Global Reset & Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
+}
+
+.dashboard-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================
+   Navbar Styles
+   ============================ */
+.navbar {
+    background-color: #343a40;
+    /* Dark background */
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 60px;
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-logo img {
+    height: 40px;
+    background: white;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.institute-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e74c3c;
+    /* Red accent like Parul */
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    color: #adb5bd;
+    text-decoration: none;
+    padding: 18px 15px;
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s, background 0.3s;
+    cursor: pointer;
+}
+
+.nav-link:hover,
+.nav-item.active .nav-link {
+    color: white;
+    background-color: #495057;
+}
+
+.nav-link i {
+    margin-left: 5px;
+    font-size: 12px;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #343a40;
+    min-width: 200px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 1001;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: flex;
+}
+
+.dropdown-item {
+    color: #adb5bd;
+    padding: 12px 20px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s;
+    border-bottom: 1px solid #495057;
+    text-align: left;
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background-color: #495057;
+    color: white;
+}
+
+/* Profile Section in Navbar */
+.navbar-profile {
+    display: flex;
+    align-items: center;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    padding: 10px;
+}
+
+.nav-profile-img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+}
+
+.nav-user-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2ecc71;
+    /* Green text */
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #343a40;
+    min-width: 180px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+}
+
+.profile-trigger:hover .profile-dropdown {
+    display: flex;
+}
+
+.logout-item {
+    color: #e74c3c;
+}
+
+.logout-item:hover {
+    background-color: #c0392b;
+    color: white;
+}
+
+/* Mobile Menu */
+.mobile-menu-icon {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    gap: 5px;
+}
+
+.bar {
+    width: 25px;
+    height: 3px;
+    background-color: white;
+    transition: 0.3s;
+}
+
+/* ============================
+   Main Dashboard Content
+   ============================ */
+.dashboard-main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 20px;
+}
+
+.dashboard-header-title {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.dashboard-header-title h2 {
+    font-size: 24px;
+    color: #555;
+    font-weight: 400;
+}
+
+.student-name-light {
+    color: #999;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
+/* Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+    align-items: start;
+}
+
+.grid-column.left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Student Profile Card */
+.student-profile-card {
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    border-top: 3px solid #fff;
+    /* Placeholder for top border */
+}
+
+.profile-image-container {
+    margin-bottom: 15px;
+}
+
+.profile-main-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.profile-name {
+    font-size: 18px;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.status-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.profile-details-list {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.profile-detail-item {
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #555;
+}
+
+.profile-detail-item.highlight {
+    font-weight: bold;
+    color: #333;
+}
+
+.profile-detail-item.small {
+    font-size: 13px;
+    color: #777;
+}
+
+/* Mobile App Card */
+.mobile-app-card {
+    background-color: #17a2b8;
+    /* Teal color */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 4px;
+    padding: 30px 20px;
+}
+
+.mobile-icon {
+    font-size: 40px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.activate-btn {
+    background: transparent;
+    border: 1px solid white;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.activate-btn:hover {
+    background: white;
+    color: #17a2b8;
+}
+
+/* Notification Panel */
+.notification-panel {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-top: 0;
+    height: 100%;
+}
+
+.panel-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.panel-header h3 {
+    font-size: 16px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification-tabs {
+    display: flex;
+    border-bottom: 1px solid #eee;
+    padding: 0 15px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 15px 20px;
+    font-size: 14px;
+    color: #777;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    font-weight: 500;
+}
+
+.notification-list {
+    padding: 0;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notif-icon-box {
+    background-color: #007bff;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 12px;
+}
+
+.notif-content {
+    flex: 1;
+}
+
+.notif-title {
+    font-size: 14px;
+    color: #007bff;
+    margin-bottom: 0;
+}
+
+.notif-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.no-record {
+    padding: 20px;
+    text-align: center;
+    color: #777;
+    background-color: #f8d7da;
+    margin: 15px;
+    border-radius: 4px;
+    color: #721c24;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mobile-menu-icon {
+        display: flex;
+    }
+
+    .nav-menu {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background-color: #343a40;
+        padding: 10px 0;
+    }
+
+    .nav-menu.active {
+        display: flex;
+    }
+
+    .nav-link {
+        padding: 10px 20px;
+    }
+
+    .dropdown-menu {
+        position: static;
+        box-shadow: none;
+        background-color: #2c3237;
+        padding-left: 20px;
+    }
+}

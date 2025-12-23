@@ -1,0 +1,28 @@
+.role-toggle {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.role-toggle button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  background: #ddd;
+}
+
+.role-toggle .active {
+  background: #f57c00;
+  color: white;
+}
+
+.link {
+  color: #f57c00;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.msg {
+  color: red;
+  margin-bottom: 10px;
+}

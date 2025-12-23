@@ -1,28 +1,362 @@
-.role-toggle {
+/* Login Page Styles - Reference Image 1 Style */
+
+.login-wrapper {
   display: flex;
-  margin-bottom: 15px;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Julius Sans One', sans-serif;
 }
 
-.role-toggle button {
+/* Left Section */
+.login-left {
   flex: 1;
-  padding: 10px;
-  border: none;
-  cursor: pointer;
-  background: #ddd;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
-.role-toggle .active {
-  background: #f57c00;
-  color: white;
+.bg-image {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px);
+  z-index: 1;
 }
 
-.link {
-  color: #f57c00;
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(80, 50, 20, 0.85), rgba(120, 60, 20, 0.7));
+  z-index: 2;
+}
+
+/* Brand Card */
+.brand-card {
+  position: relative;
+  z-index: 10;
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 300px;
+  height: 300px;
+  /* Square shape */
+}
+
+.brand-logo {
+  width: 150px;
+  height: auto;
+  margin-bottom: 0;
+  opacity: 1;
+}
+
+/* Right Section */
+.login-right {
+  width: 500px;
+  background-color: #fff;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 20;
+}
+
+/* Header Text */
+.login-header-text {
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+.login-header-text h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 10px 0;
+}
+
+.login-header-text p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-label {
+  font-size: 14px;
+  color: #444;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-label::before {
+  content: '*';
+  color: #e74c3c;
+}
+
+/* Input Wrapper with Icon */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  color: #999;
+  font-size: 14px;
+  z-index: 1;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  border: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Julius Sans One', sans-serif;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  border-color: #17a2b8;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+}
+
+/* Radio Buttons */
+.role-group {
+  margin-bottom: 10px;
+}
+
+.radio-options {
+  display: flex;
+  gap: 30px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #333;
   cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  accent-color: #e74c3c;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Checkbox */
+.checkbox-group {
+  flex-direction: row;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 15px;
   margin-top: 10px;
 }
 
+.btn-login {
+  background-color: #2c7a7b;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: 'Julius Sans One', sans-serif;
+  font-weight: 600;
+  flex: 1;
+  transition: background 0.3s;
+}
+
+.btn-login:hover {
+  background-color: #236364;
+}
+
+.btn-forgot {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: 'Julius Sans One', sans-serif;
+  font-weight: 600;
+  flex: 1;
+  transition: background 0.3s;
+}
+
+.btn-forgot:hover {
+  background-color: #c82333;
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #999;
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #eee;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+/* Google Button */
+.google-signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  color: #444;
+  transition: background 0.2s;
+  width: 100%;
+}
+
+.google-signin-btn:hover {
+  background-color: #f8f9fa;
+}
+
+.google-signin-btn img {
+  width: 20px;
+  height: 20px;
+}
+
+/* Footer */
+.login-footer {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+}
+
 .msg {
-  color: red;
-  margin-bottom: 10px;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Forgot Password Container */
+.forgot-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.forgot-container h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.link-back {
+  color: #2c7a7b;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.link-back:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .login-wrapper {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .login-left {
+    height: 300px;
+    flex: none;
+  }
+
+  .brand-card {
+    padding: 30px;
+    min-width: 200px;
+  }
+
+  .login-right {
+    width: 100%;
+    padding: 40px 20px;
+    box-sizing: border-box;
+    flex: 1;
+  }
 }

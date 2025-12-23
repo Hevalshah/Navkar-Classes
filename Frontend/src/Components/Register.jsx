@@ -8,6 +8,9 @@ import { registerUser } from "../Services/authService";
 const Register = () => {
     const navigate = useNavigate();
     const [role, setRole] = useState("student");
+    const [name, setName] = useState("");
+    const [parentName, setParentName] = useState("");
+    const [mobile, setMobile] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,7 +28,15 @@ const Register = () => {
         }
 
         try {
-            const data = await registerUser({ email, password, role });
+            const userData = {
+                name,
+                mobile,
+                email,
+                password,
+                role,
+                ...(role === "student" && { parentName })
+            };
+            const data = await registerUser(userData);
             localStorage.setItem("token", data.token);
             localStorage.setItem("role", role);
 
@@ -91,6 +102,50 @@ const Register = () => {
                         </div>
                     </div>
 
+                    {/* Name Input */}
+                    <div className="form-group">
+                        <label className="input-label">Full Name</label>
+                        <div className="input-wrapper">
+                            <i className="fas fa-user input-icon"></i>
+                            <input
+                                type="text"
+                                className="form-input with-icon"
+                                required
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Parent Name (Student Only) */}
+                    {role === "student" && (
+                        <div className="form-group">
+                            <label className="input-label">Parent's Name</label>
+                            <div className="input-wrapper">
+                                <i className="fas fa-user-friends input-icon"></i>
+                                <input
+                                    type="text"
+                                    className="form-input with-icon"
+                                    required
+                                    onChange={(e) => setParentName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Mobile Input */}
+                    <div className="form-group">
+                        <label className="input-label">Mobile Number</label>
+                        <div className="input-wrapper">
+                            <i className="fas fa-phone input-icon"></i>
+                            <input
+                                type="tel"
+                                className="form-input with-icon"
+                                required
+                                onChange={(e) => setMobile(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
                     {/* Email Input */}
                     <div className="form-group">
                         <label className="input-label">Email Address</label>
@@ -141,10 +196,7 @@ const Register = () => {
                         <p>Already have an account? <span onClick={() => navigate("/")}>Login</span></p>
                     </div>
 
-                    {/* Footer */}
-                    <div className="register-footer">
-                        <p>© 2024 Navkar Classes. All rights reserved.</p>
-                    </div>
+
 
                 </form>
             </div>

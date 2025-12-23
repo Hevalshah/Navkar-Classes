@@ -147,16 +147,11 @@ const Login = () => {
               Sign in with Google
             </button>
 
-            {/* Register Link - ADDED HERE */}
+            {/* Register Link */}
             <div className="divider" style={{ margin: '15px 0', border: 'none' }}></div>
             <p style={{ textAlign: 'center', fontSize: '14px', color: '#666' }}>
               Don't have an account? <span style={{ color: '#2c7a7b', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => navigate("/register")}>Register</span>
             </p>
-
-            {/* Footer */}
-            <div className="login-footer">
-              <p>© 2024 Navkar Classes. All rights reserved.</p>
-            </div>
 
           </form>
         ) : (

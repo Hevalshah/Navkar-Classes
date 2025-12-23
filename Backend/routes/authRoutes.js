@@ -10,8 +10,8 @@ const router = express.Router(); // ✅ THIS WAS MISSING
 // ===============================
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-    console.log("Register Request:", { email, role }); // Log request data
+    const { name, parentName, mobile, email, password, role } = req.body;
+    console.log("Register Request:", { name, email, role });
 
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -26,9 +26,12 @@ router.post("/register", async (req, res) => {
 
     // Create new user
     user = new User({
+      name,
+      parentName,
+      mobile,
       email,
       password: hashedPassword,
-      role: role || "student", // Default to student if not provided
+      role: role || "student",
     });
 
     await user.save();
@@ -45,6 +48,25 @@ router.post("/register", async (req, res) => {
   } catch (error) {
     console.error("Registration Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// ===============================
+// GET CURRENT USER ROUTE
+// ===============================
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.header("Authorization").replace("Bearer ", "");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(401).json({ message: "Please authenticate" });
   }
 });
 

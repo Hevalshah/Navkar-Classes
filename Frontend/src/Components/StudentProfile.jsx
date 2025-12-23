@@ -2,10 +2,16 @@ import React from "react";
 import "../Styles/dashboard.css";
 
 const StudentProfile = ({ user }) => {
+    if (!user) return <div className="student-profile-card">Loading...</div>;
+
     return (
         <div className="student-profile-card">
             <div className="profile-image-container">
-                <img src={user.profileImg} alt={user.name} className="profile-main-img" />
+                <img
+                    src={user.profileImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                    alt={user.name}
+                    className="profile-main-img"
+                />
             </div>
 
             <div className="profile-info">
@@ -14,20 +20,19 @@ const StudentProfile = ({ user }) => {
 
                 <div className="profile-details-list">
                     <p className="profile-detail-item">
-                        <strong>{user.course}</strong>
+                        <strong>{user.role === 'admin' ? 'Faculty' : 'Student'}</strong>
                     </p>
                     <p className="profile-detail-item highlight">
-                        {user.id}
-                    </p>
-                    <p className="profile-detail-item small">
-                        {user.dob}
+                        {user._id ? user._id.slice(-6).toUpperCase() : "N/A"}
                     </p>
                     <p className="profile-detail-item small">
                         Mobile: {user.mobile}
                     </p>
-                    <p className="profile-detail-item small">
-                        Mother: {user.motherName}
-                    </p>
+                    {user.parentName && (
+                        <p className="profile-detail-item small">
+                            Parent: {user.parentName}
+                        </p>
+                    )}
                     <p className="profile-detail-item small email">
                         Email: {user.email}
                     </p>

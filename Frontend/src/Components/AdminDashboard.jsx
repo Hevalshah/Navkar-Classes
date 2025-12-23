@@ -47,27 +47,6 @@ const AdminDashboard = () => {
                     <h2>Dashboard <span className="student-name-light">{user.name}</span></h2>
                 </div>
 
-                <div className="dashboard-grid">
-                    {/* Left Column: Profile */}
-                    <div className="grid-column left-col">
-                        <StudentProfile user={user} />
-
-                        {/* Admin might not need "Activate Mobile App" but keeping layout consistent for now, or could replace with Admin specific widget */}
-                        <div className="mobile-app-card" style={{ backgroundColor: '#2c3e50' }}>
-                            <div className="mobile-content">
-                                <i className="fas fa-chalkboard-teacher mobile-icon"></i>
-                                <h3>Teacher Portal</h3>
-                                <button className="activate-btn">Access LMS</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Notifications */}
-                    <div className="grid-column right-col">
-                        <NotificationPanel />
-                    </div>
-                </div>
-
             </div>
         </div>
     );

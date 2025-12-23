@@ -12,6 +12,19 @@ export const registerUser = async (data) => {
   return res.json();
 };
 
+export const getProfile = async (token) => {
+  const res = await fetch("http://localhost:5000/api/auth/me", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch profile");
+  return res.json();
+};
+
 export const loginUser = async (data) => {
   const res = await fetch("http://localhost:5000/api/auth/login", {
     method: "POST",

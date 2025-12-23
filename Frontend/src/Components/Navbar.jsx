@@ -117,8 +117,12 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                 {/* User Profile Section */}
                 <div className="navbar-profile">
                     <div className="profile-trigger">
-                        <img src={user.profileImg} alt="Profile" className="nav-profile-img" />
-                        <span className="nav-user-name">Hi, {user.name}</span>
+                        <img
+                            src={user?.profileImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                            alt="Profile"
+                            className="nav-profile-img"
+                        />
+                        <span className="nav-user-name">Hi, {user?.name || "User"}</span>
                         <div className="profile-dropdown">
                             <Link to="#" className="dropdown-item"><i className="fas fa-user"></i> My Profile</Link>
                             <Link to="#" className="dropdown-item"><i className="fas fa-key"></i> Change Password</Link>

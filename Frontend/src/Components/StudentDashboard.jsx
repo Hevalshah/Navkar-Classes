@@ -1,64 +1,50 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import StudentProfile from "./StudentProfile";
 import NotificationPanel from "./NotificationPanel";
 import "../Styles/dashboard.css";
-import profileImg from "../assets/classroom.jpg"; // Placeholder
+import { getProfile } from "../Services/authService";
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
-    const [user, setUser] = useState({ name: "Student", email: "" });
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
-
-        if (!token || role !== "student") {
-            navigate("/");
-        }
-
-        // Mock Data
-        setUser({
-            name: "SHAH HEVAL SAURABH",
-            course: "PIET-1 - BTech - CSE (Semester - 7)",
-            id: "2203031050600",
-            enrollment: "489151946194",
-            dob: "16-04-2005",
-            mobile: "9054621078 | 8000222004",
-            motherName: "Kaksha",
-            email: "hevalshah2056@gmail.com",
-            profileImg: profileImg
-        });
+        const fetchProfile = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                navigate("/");
+                return;
+            }
+            try {
+                const userData = await getProfile(token);
+                setUser(userData);
+            } catch (error) {
+                console.error("Failed to load profile", error);
+                navigate("/");
+            }
+        };
+        fetchProfile();
     }, [navigate]);
-
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        navigate("/");
-    };
 
     return (
         <div className="dashboard-layout">
-            <Navbar user={user} onLogout={handleLogout} />
+            <Navbar role="student" onLogout={() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("role");
+                navigate("/");
+            }} />
 
             <div className="dashboard-main-container">
                 <div className="dashboard-header-title">
-                    <h2>Dashboard <span className="student-name-light">{user.name}</span></h2>
+                    <h2>Dashboard <span className="student-name-light">{user ? user.name : "Loading..."}</span></h2>
                 </div>
 
                 <div className="dashboard-grid">
-                    {/* Left Column: Profile & Mobile App */}
+                    {/* Left Column: Profile */}
                     <div className="grid-column left-col">
                         <StudentProfile user={user} />
-
-                        <div className="mobile-app-card">
-                            <div className="mobile-content">
-                                <i className="fas fa-mobile-alt mobile-icon"></i>
-                                <h3>Activate Your Mobile Application</h3>
-                                <button className="activate-btn">Activate</button>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Right Column: Notifications */}
@@ -66,7 +52,6 @@ const StudentDashboard = () => {
                         <NotificationPanel />
                     </div>
                 </div>
-
             </div>
         </div>
     );

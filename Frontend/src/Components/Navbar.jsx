@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "../Styles/dashboard.css";
 import logo from "../assets/navkar-logo.png";
 
@@ -50,8 +50,8 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                     >
                         <span className="nav-link">Timetable <i className="fas fa-chevron-down"></i></span>
                         <div className="dropdown-menu">
-                            <Link to="#" className="dropdown-item">{role === "admin" ? "Timetables" : "Timetable"}</Link>
-                            <Link to="#" className="dropdown-item">Attendance</Link>
+                            <Link to="/timetable" className="dropdown-item">{role === "admin" ? "Timetables" : "Timetable"}</Link>
+                            <Link to="/attendance" className="dropdown-item">Attendance</Link>
                         </div>
                     </li>
 
@@ -64,8 +64,8 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                     >
                         <span className="nav-link">Exam <i className="fas fa-chevron-down"></i></span>
                         <div className="dropdown-menu">
-                            <Link to="#" className="dropdown-item">Admit Card</Link>
-                            <Link to="#" className="dropdown-item">Result</Link>
+                            <Link to="/admit-card" className="dropdown-item">Admit Card</Link>
+                            <Link to="/result" className="dropdown-item">Result</Link>
                         </div>
                     </li>
 
@@ -78,8 +78,8 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                     >
                         <span className="nav-link">Fee <i className="fas fa-chevron-down"></i></span>
                         <div className="dropdown-menu">
-                            {role === "student" && <Link to="#" className="dropdown-item">Pay Fees</Link>}
-                            <Link to="#" className="dropdown-item">Fee History</Link>
+                            {role === "student" && <Link to="/pay-fees" className="dropdown-item">Pay Fees</Link>}
+                            <Link to="/fee-history" className="dropdown-item">Fee History</Link>
                         </div>
                     </li>
 
@@ -92,8 +92,8 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                     >
                         <span className="nav-link">Courses <i className="fas fa-chevron-down"></i></span>
                         <div className="dropdown-menu">
-                            <Link to="#" className="dropdown-item">{role === "admin" ? "Add Materials" : "Materials"}</Link>
-                            <Link to="#" className="dropdown-item">{role === "admin" ? "Add Tests" : "Tests"}</Link>
+                            <Link to="/materials" className="dropdown-item">{role === "admin" ? "Add Materials" : "Materials"}</Link>
+                            <Link to="/tests" className="dropdown-item">{role === "admin" ? "Add Tests" : "Tests"}</Link>
                         </div>
                     </li>
 
@@ -107,8 +107,8 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                         >
                             <span className="nav-link">Other <i className="fas fa-chevron-down"></i></span>
                             <div className="dropdown-menu">
-                                <Link to="#" className="dropdown-item">Certificate Request</Link>
-                                <Link to="#" className="dropdown-item">Feedback</Link>
+                                <Link to="/certificate-request" className="dropdown-item">Certificate Request</Link>
+                                <Link to="/feedback" className="dropdown-item">Feedback</Link>
                             </div>
                         </li>
                     )}
@@ -117,15 +117,17 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                 {/* User Profile Section */}
                 <div className="navbar-profile">
                     <div className="profile-trigger">
-                        <img
-                            src={user?.profileImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
-                            alt="Profile"
-                            className="nav-profile-img"
-                        />
+                        <div className="nav-profile-img-container">
+                            <img
+                                src={user?.profileImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                                alt="Profile"
+                                className="nav-profile-img"
+                            />
+                        </div>
                         <span className="nav-user-name">Hi, {user?.name || "User"}</span>
                         <div className="profile-dropdown">
-                            <Link to="#" className="dropdown-item"><i className="fas fa-user"></i> My Profile</Link>
-                            <Link to="#" className="dropdown-item"><i className="fas fa-key"></i> Change Password</Link>
+                            <Link to="/profile" className="dropdown-item"><i className="fas fa-user"></i> My Profile</Link>
+                            <Link to="/change-password" className="dropdown-item"><i className="fas fa-key"></i> Change Password</Link>
                             <div className="dropdown-divider"></div>
                             <button onClick={onLogout} className="dropdown-item logout-item">
                                 <i className="fas fa-sign-out-alt"></i> Log Out

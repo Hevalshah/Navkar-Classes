@@ -4,6 +4,9 @@ import "../Styles/dashboard.css";
 const StudentProfile = ({ user }) => {
     if (!user) return <div className="student-profile-card">Loading...</div>;
 
+    const profileId = user._id ?? user.id;
+    const displayId = profileId ? String(profileId).slice(-6).toUpperCase() : "N/A";
+
     return (
         <div className="student-profile-card">
             <div className="profile-image-container">
@@ -23,7 +26,7 @@ const StudentProfile = ({ user }) => {
                         <strong>{user.role === 'admin' ? 'Faculty' : 'Student'}</strong>
                     </p>
                     <p className="profile-detail-item highlight">
-                        {user._id ? user._id.slice(-6).toUpperCase() : "N/A"}
+                        {displayId}
                     </p>
                     <p className="profile-detail-item small">
                         Mobile: {user.mobile}

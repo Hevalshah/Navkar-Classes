@@ -36,6 +36,19 @@ export const loginUser = async (data) => {
   return res.json();
 };
 
+export const logoutUser = async (token) => {
+  const res = await fetch("http://localhost:5000/api/auth/logout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) throw new Error();
+  return res.json();
+};
+
 export const forgotPassword = async (email) => {
   const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
     method: "POST",

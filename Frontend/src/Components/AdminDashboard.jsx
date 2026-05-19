@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import StudentProfile from "./StudentProfile";
-import NotificationPanel from "./NotificationPanel";
 import "../Styles/dashboard.css";
 import profileImg from "../assets/classroom.jpg"; // Placeholder
+import { logoutUser } from "../Services/authService";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -32,10 +31,20 @@ const AdminDashboard = () => {
         });
     }, [navigate]);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        navigate("/");
+    const handleLogout = async () => {
+        const token = localStorage.getItem("token");
+
+        try {
+            if (token) {
+                await logoutUser(token);
+            }
+        } catch (error) {
+            console.error("Failed to record logout", error);
+        } finally {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            navigate("/");
+        }
     };
 
     return (

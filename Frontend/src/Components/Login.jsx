@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../Styles/login.css";
 import logo from "../assets/navkar-logo.png";
 import classroom from "../assets/classroom.jpg";
+import googleLogo from "../assets/google-logo.png";
 import { loginUser, forgotPassword } from "../Services/authService";
 
 const Login = () => {
@@ -143,7 +144,7 @@ const Login = () => {
 
             {/* Google Sign In */}
             <button type="button" className="google-signin-btn">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" />
+              <img src={googleLogo} alt="Google" />
               Sign in with Google
             </button>
 

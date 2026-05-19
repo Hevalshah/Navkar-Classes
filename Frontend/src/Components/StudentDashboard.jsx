@@ -4,7 +4,7 @@ import Navbar from "./Navbar";
 import StudentProfile from "./StudentProfile";
 import NotificationPanel from "./NotificationPanel";
 import "../Styles/dashboard.css";
-import { getProfile } from "../Services/authService";
+import { getProfile, logoutUser } from "../Services/authService";
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
@@ -28,13 +28,25 @@ const StudentDashboard = () => {
         fetchProfile();
     }, [navigate]);
 
+    const handleLogout = async () => {
+        const token = localStorage.getItem("token");
+
+        try {
+            if (token) {
+                await logoutUser(token);
+            }
+        } catch (error) {
+            console.error("Failed to record logout", error);
+        } finally {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            navigate("/");
+        }
+    };
+
     return (
         <div className="dashboard-layout">
-            <Navbar role="student" onLogout={() => {
-                localStorage.removeItem("token");
-                localStorage.removeItem("role");
-                navigate("/");
-            }} />
+            <Navbar role="student" user={user} onLogout={handleLogout} />
 
             <div className="dashboard-main-container">
                 <div className="dashboard-header-title">

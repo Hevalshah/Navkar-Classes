@@ -13,11 +13,16 @@ const PayFees = () => {
     const [paySuccess, setPaySuccess] = useState(false);
     const [txnDetails, setTxnDetails] = useState(null);
 
+    const [totalFees, setTotalFees] = useState(35000);
+    const [paidAmount, setPaidAmount] = useState(0);
+
     // Form inputs
     const [upiId, setUpiId] = useState("");
     const [cardNumber, setCardNumber] = useState("");
     const [cardExpiry, setCardExpiry] = useState("");
     const [cardCvv, setCardCvv] = useState("");
+
+    const token = localStorage.getItem("token");
 
     const fallbackUser = {
         name: "Student (Demo Mode)",
@@ -25,17 +30,30 @@ const PayFees = () => {
         profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
     };
 
-    const feeBreakdown = [
-        { id: 1, head: "Tuition Fee - CA Intermediate (Group 1)", amount: 12000 },
-        { id: 2, head: "Weekly Assessment Test & Material Charge", amount: 2000 },
-        { id: 3, head: "Library & Lab Digital Subscription", amount: 1000 }
-    ];
+    const loadFeesStatus = async (userData) => {
+        try {
+            const res = await fetch("http://localhost:5000/api/fees", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const history = await res.json();
+                const totalPaid = history
+                    .filter(p => p.status === "Paid")
+                    .reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                setPaidAmount(totalPaid);
+            }
 
-    const totalAmount = feeBreakdown.reduce((sum, item) => sum + item.amount, 0);
+            const stdName = (userData?.standard_name || "").toLowerCase();
+            const baseFees = stdName.includes("11") || stdName.includes("12") || stdName.includes("commerce") ? 50000 : 35000;
+            setTotalFees(baseFees);
+
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const token = localStorage.getItem("token");
             if (!token) {
                 setUser(fallbackUser);
                 return;
@@ -43,8 +61,8 @@ const PayFees = () => {
             try {
                 const userData = await getProfile(token);
                 setUser(userData);
+                loadFeesStatus(userData);
             } catch (error) {
-                console.warn("Failed to load profile from API, falling back to mock user", error);
                 setUser(fallbackUser);
             }
         };
@@ -52,7 +70,6 @@ const PayFees = () => {
     }, []);
 
     const handleLogout = async () => {
-        const token = localStorage.getItem("token");
         try {
             if (token) {
                 await logoutUser(token);
@@ -66,9 +83,16 @@ const PayFees = () => {
         }
     };
 
-    const handlePaymentSubmit = (e) => {
+    const remainingAmount = Math.max(0, totalFees - paidAmount);
+
+    const handlePaymentSubmit = async (e) => {
         e.preventDefault();
         
+        if (remainingAmount <= 0) {
+            alert("No pending fees to pay.");
+            return;
+        }
+
         // Simple form validation
         if (paymentMethod === "upi" && !upiId.includes("@")) {
             alert("Please enter a valid UPI ID (e.g. user@okhdfcbank)");
@@ -81,19 +105,48 @@ const PayFees = () => {
 
         setIsPaying(true);
 
-        // Simulate payment gateway API processing
-        setTimeout(() => {
-            setIsPaying(false);
-            setPaySuccess(true);
-            setTxnDetails({
-                id: "TXN" + Math.floor(1000000000 + Math.random() * 9000000000),
-                date: "18-May-2026 09:37 PM",
-                amount: totalAmount,
-                method: paymentMethod.toUpperCase(),
-                ref: "NAV" + Math.floor(100000 + Math.random() * 900000)
+        const referenceNo = "NC" + Math.floor(100000 + Math.random() * 900000);
+
+        try {
+            const res = await fetch("http://localhost:5000/api/fees/pay", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    amount: remainingAmount,
+                    paymentMode: paymentMethod.toUpperCase(),
+                    referenceNo: referenceNo
+                })
             });
-        }, 2200);
+
+            if (res.ok) {
+                const data = await res.json();
+                setIsPaying(false);
+                setPaySuccess(true);
+                setTxnDetails({
+                    id: "TXN" + Math.floor(1000000000 + Math.random() * 9000000000),
+                    date: new Date(data.paid_date).toLocaleString(),
+                    amount: remainingAmount,
+                    method: paymentMethod.toUpperCase(),
+                    ref: referenceNo
+                });
+            } else {
+                alert("Failed to complete transaction.");
+                setIsPaying(false);
+            }
+        } catch (err) {
+            console.error(err);
+            setIsPaying(false);
+        }
     };
+
+    const feeBreakdown = [
+        { id: 1, head: "School/Commerce Tuition Fee (Base)", amount: totalFees - 3000 },
+        { id: 2, head: "Weekly Assessment Test & Material Charge", amount: 2000 },
+        { id: 3, head: "Library & Digital portal Subscription", amount: 1000 }
+    ];
 
     return (
         <div className="dashboard-layout">
@@ -110,7 +163,7 @@ const PayFees = () => {
                     {paySuccess ? (
                         /* Success Transaction View */
                         <div className="portal-card green-theme" style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center", padding: "40px 20px" }}>
-                            <div style={{ width: "70px", height: "70px", borderRadius: "50%", background: "#dcfce7", color: "#2ecc71", display: "flex", alignItems: "center", justify: "center", fontSize: "36px", margin: "0 auto 20px auto", animation: "bounce 1s infinite" }}>
+                            <div style={{ width: "70px", height: "70px", borderRadius: "50%", background: "#dcfce7", color: "#2ecc71", display: "flex", alignItems: "center", justify: "center", fontSize: "36px", margin: "0 auto 20px auto" }}>
                                 <i className="fas fa-check"></i>
                             </div>
                             <h3 style={{ color: "#2ecc71", margin: "0 0 10px 0" }}>Payment Successful!</h3>
@@ -144,6 +197,15 @@ const PayFees = () => {
                                 <i className="fas fa-home"></i> Back to Dashboard
                             </button>
                         </div>
+                    ) : remainingAmount <= 0 ? (
+                        <div className="portal-card" style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center", padding: "45px 20px" }}>
+                            <div style={{ fontSize: "50px", color: "#2ecc71", marginBottom: "15px" }}><i className="fas fa-check-circle"></i></div>
+                            <h3>All Fees Paid!</h3>
+                            <p style={{ color: "#4a5568", marginTop: "10px" }}>You have no outstanding tuition or portal fees balances. Thank you!</p>
+                            <button onClick={() => navigate("/dashboard")} className="portal-btn primary" style={{ marginTop: "20px" }}>
+                                <i className="fas fa-home"></i> Back to Dashboard
+                            </button>
+                        </div>
                     ) : (
                         /* Standard Billing and Form View */
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "30px", alignItems: "start" }}>
@@ -164,13 +226,16 @@ const PayFees = () => {
                                 <hr style={{ border: "0", borderTop: "1px solid #e2e8f0", margin: "20px 0" }} />
 
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                                    <span style={{ fontWeight: "700", color: "#1a202c" }}>Total Payable Balance</span>
-                                    <span style={{ fontSize: "20px", fontWeight: "bold", color: "#e74c3c" }}>₹{totalAmount.toLocaleString()}</span>
+                                    <span style={{ color: "#718096" }}>Total Tuition Fee:</span>
+                                    <span style={{ fontWeight: "600" }}>₹{totalFees.toLocaleString()}</span>
                                 </div>
-
-                                <div className="no-record" style={{ margin: "0", padding: "10px 15px", borderRadius: "4px", background: "#fef3c7", color: "#92400e", fontSize: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-                                    <i className="fas fa-exclamation-triangle" style={{ fontSize: "14px" }}></i>
-                                    <span>Due Date: <strong>30-May-2026</strong>. Late charges apply after this.</span>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                                    <span style={{ color: "#2ecc71" }}>Total Amount Paid:</span>
+                                    <span style={{ fontWeight: "600", color: "#2ecc71" }}>₹{paidAmount.toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                                    <span style={{ fontWeight: "700", color: "#1a202c" }}>Total Payable Balance</span>
+                                    <span style={{ fontSize: "20px", fontWeight: "bold", color: "#e74c3c" }}>₹{remainingAmount.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -234,7 +299,6 @@ const PayFees = () => {
                                                         maxLength="19"
                                                         value={cardNumber}
                                                         onChange={(e) => {
-                                                            // Auto spacing for card numbers
                                                             const val = e.target.value.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim();
                                                             setCardNumber(val);
                                                         }}
@@ -292,7 +356,7 @@ const PayFees = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <i className="fas fa-shield-alt"></i> Secure Pay ₹{totalAmount.toLocaleString()}
+                                                <i className="fas fa-shield-alt"></i> Secure Pay ₹{remainingAmount.toLocaleString()}
                                             </>
                                         )}
                                     </button>

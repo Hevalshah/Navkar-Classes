@@ -5,6 +5,20 @@ import { getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
+const defaultMockUser = {
+    id: "STU654321",
+    name: "John Doe",
+    email: "john.doe@navkar.com",
+    mobile: "+91 98765 43210",
+    parentName: "Richard Doe",
+    profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+    role: "student",
+    batch: "Standard 10 - Batch A",
+    joiningDate: "10-May-2025",
+    address: "123, Navkar Heights, Near Stadium Road, Ahmedabad, Gujarat - 380009",
+    status: "Active"
+};
+
 const MyProfile = () => {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
@@ -12,6 +26,7 @@ const MyProfile = () => {
     const cropContainerRef = useRef(null);
 
     const [user, setUser] = useState(null);
+    const [role, setRole] = useState("student");
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -30,7 +45,7 @@ const MyProfile = () => {
     const [startPinchDist, setStartPinchDist] = useState(0);
     const [startPinchZoom, setStartPinchZoom] = useState(1);
 
-    // Form inputs state (academic text details only)
+    // Form inputs state
     const [editName, setEditName] = useState("");
     const [editMobile, setEditMobile] = useState("");
     const [editParentName, setEditParentName] = useState("");
@@ -38,22 +53,11 @@ const MyProfile = () => {
     const [editAddress, setEditAddress] = useState("");
     const [editBatch, setEditBatch] = useState("");
 
-    const defaultMockUser = {
-        id: "STU654321",
-        name: "John Doe",
-        email: "john.doe@navkar.com",
-        mobile: "+91 98765 43210",
-        parentName: "Richard Doe",
-        profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        role: "student",
-        batch: "CA Foundation - Batch A",
-        joiningDate: "10-May-2025",
-        address: "123, Navkar Heights, Near Stadium Road, Ahmedabad, Gujarat - 380009",
-        status: "Active"
-    };
-
     // Load Profile details
     const loadProfile = async () => {
+        const storedRole = localStorage.getItem("role") || "student";
+        setRole(storedRole);
+
         const savedUserStr = localStorage.getItem("editedUser");
         if (savedUserStr) {
             try {
@@ -68,8 +72,9 @@ const MyProfile = () => {
 
         const token = localStorage.getItem("token");
         if (!token) {
-            setUser(defaultMockUser);
-            initForm(defaultMockUser);
+            const guestUser = { ...defaultMockUser, role: storedRole, name: storedRole === "student" ? "John Doe" : "Test Admin" };
+            setUser(guestUser);
+            initForm(guestUser);
             return;
         }
 
@@ -84,8 +89,9 @@ const MyProfile = () => {
             initForm(mergedUser);
         } catch (error) {
             console.warn("Failed to load profile from API, falling back to mock user", error);
-            setUser(defaultMockUser);
-            initForm(defaultMockUser);
+            const guestUser = { ...defaultMockUser, role: storedRole, name: storedRole === "student" ? "John Doe" : "Test Admin" };
+            setUser(guestUser);
+            initForm(guestUser);
         }
     };
 
@@ -217,7 +223,7 @@ const MyProfile = () => {
     };
 
     const handleRotate = () => {
-        setRotation((prev) => (prev + 270) % 360); // 90 degrees counter-clockwise like WhatsApp
+        setRotation((prev) => (prev + 270) % 360);
     };
 
     // Scroll Zoom Listener for Desktop
@@ -239,37 +245,32 @@ const MyProfile = () => {
         };
     }, [isPhotoModalOpen]);
 
-    // Canvas crop operation (saves a physical perfectly-cropped file)
+    // Canvas crop operation
     const handleSaveCrop = () => {
         if (!previewImgRef.current) return;
         
         const img = previewImgRef.current;
         const canvas = document.createElement("canvas");
-        const cropSize = 300; // Output resolution size
+        const cropSize = 300;
         canvas.width = cropSize;
         canvas.height = cropSize;
         const ctx = canvas.getContext("2d");
 
-        // Rich black canvas background
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, cropSize, cropSize);
 
-        // Translate to pivot center for standard rotations
         ctx.translate(150, 150);
         ctx.rotate((rotation * Math.PI) / 180);
         ctx.scale(zoom, zoom);
 
-        // Aspect fit inside crop box
         const wRatio = cropSize / img.naturalWidth;
         const hRatio = cropSize / img.naturalHeight;
         const ratio = Math.min(wRatio, hRatio);
         const fitW = img.naturalWidth * ratio;
         const fitH = img.naturalHeight * ratio;
 
-        // Apply screen translation offsets to unscaled pivot positions
         ctx.drawImage(img, -fitW / 2 + (xOffset / zoom), -fitH / 2 + (yOffset / zoom), fitW, fitH);
         
-        // Export high quality cropped base64 jpeg
         const croppedBase64 = canvas.toDataURL("image/jpeg", 0.95);
         
         const updatedUser = {
@@ -317,23 +318,27 @@ const MyProfile = () => {
             setUser(updatedUser);
             localStorage.setItem("editedUser", JSON.stringify(updatedUser));
             setIsEditOpen(false);
-            alert("Student profile details successfully updated!");
+            alert("Profile details successfully updated!");
         }, 1200);
     };
 
+    const isStaff = role === "staff" || role === "admin" || role === "teacher";
     const studentId = user ? (user._id ?? user.id ?? "STU654321") : "STU654321";
     const sliceId = String(studentId).slice(-6).toUpperCase();
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="student" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
 
             <div className="dashboard-main-container">
                 <div className="page-container">
                     
                     {/* Header */}
                     <div className="page-header">
-                        <h2><i className="fas fa-user-circle"></i> Student Profile Workspace</h2>
+                        <h2>
+                            <i className={isStaff ? "fas fa-user-tie" : "fas fa-user-circle"}></i> 
+                            {isStaff ? " Staff Profile Workspace" : " Student Profile Workspace"}
+                        </h2>
                         
                         <button onClick={handleEditOpen} className="portal-btn danger">
                             <i className="fas fa-user-edit"></i> Edit Profile Information
@@ -351,7 +356,7 @@ const MyProfile = () => {
                             >
                                 <img 
                                     src={user?.profileImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} 
-                                    alt={user?.name || "Student"} 
+                                    alt={user?.name || "User"} 
                                     className="profile-avatar-large"
                                 />
 
@@ -362,76 +367,108 @@ const MyProfile = () => {
                             </div>
                             
                             <h3>{user?.name || "Loading..."}</h3>
-                            <span className="batch-label">{user?.batch || "CA Foundation"}</span>
+                            {!isStaff && <span className="batch-label">{user?.batch || "Standard 10 - Morning"}</span>}
                             
-                            <span className="portal-badge success" style={{ padding: "5px 12px", fontSize: "11px" }}>
-                                {user?.status || "Active"} Student
-                            </span>
+                            {!isStaff ? (
+                                <span className="portal-badge success" style={{ padding: "5px 12px", fontSize: "11px" }}>
+                                    {user?.status || "Active"} Student
+                                </span>
+                            ) : (
+                                <span className="portal-badge info" style={{ padding: "5px 12px", fontSize: "11px", backgroundColor: "#3182ce" }}>
+                                    Official Faculty
+                                </span>
+                            )}
 
-                            <div style={{ marginTop: "20px", paddingTop: "15px", borderTop: "1px solid #e2e8f0", fontSize: "13px", color: "#718096", textAlign: "left" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                                    <span>Joined:</span>
-                                    <strong>{user?.joiningDate || "10-May-2025"}</strong>
+                            {!isStaff && (
+                                <div style={{ marginTop: "20px", paddingTop: "15px", borderTop: "1px solid #e2e8f0", fontSize: "13px", color: "#718096", textAlign: "left" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                                        <span>Joined:</span>
+                                        <strong>{user?.joiningDate || "10-May-2025"}</strong>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <span>Portal Role:</span>
+                                        <strong>STUDENT</strong>
+                                    </div>
                                 </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>Portal Role:</span>
-                                    <strong>STUDENT</strong>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* General details table sheet */}
                         <div className="portal-card blue-theme">
                             <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", textTransform: "uppercase", color: "#4a5568", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
-                                <i className="fas fa-file-invoice"></i> Official Academic & Personal Records
+                                <i className="fas fa-file-invoice"></i> {isStaff ? "Official Staff Records" : "Official Academic & Personal Records"}
                             </h3>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px 35px" }}>
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Full Name</span>
-                                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.name}</span>
-                                </div>
+                            {isStaff ? (
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px 35px" }}>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Full Name</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.name}</span>
+                                    </div>
 
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Student Roll ID</span>
-                                    <span style={{ fontSize: "15px", fontWeight: "bold", color: "#e74c3c" }}>{sliceId}</span>
-                                </div>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Mobile Number</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.mobile}</span>
+                                    </div>
 
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Mobile Number</span>
-                                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.mobile}</span>
-                                </div>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Email Address</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.email}</span>
+                                    </div>
 
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Parent / Guardian Name</span>
-                                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.parentName}</span>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", gridColumn: "span 2" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Residential Address</span>
+                                        <span style={{ fontSize: "14px", fontWeight: "500", color: "#4a5568", lineHeight: "1.4" }}>{user?.address}</span>
+                                    </div>
                                 </div>
+                            ) : (
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px 35px" }}>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Full Name</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.name}</span>
+                                    </div>
 
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Email Address</span>
-                                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.email}</span>
-                                </div>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Student Roll ID</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "bold", color: "#e74c3c" }}>{sliceId}</span>
+                                    </div>
 
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Course & Assigned Batch</span>
-                                    <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.batch}</span>
-                                </div>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Mobile Number</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.mobile}</span>
+                                    </div>
 
-                                <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", gridColumn: "span 2" }}>
-                                    <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Residential Address</span>
-                                    <span style={{ fontSize: "14px", fontWeight: "500", color: "#4a5568", lineHeight: "1.4" }}>{user?.address}</span>
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Parent / Guardian Name</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.parentName}</span>
+                                    </div>
+
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Email Address</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.email}</span>
+                                    </div>
+
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Course & Assigned Batch</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#2d3748" }}>{user?.batch}</span>
+                                    </div>
+
+                                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", gridColumn: "span 2" }}>
+                                        <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Residential Address</span>
+                                        <span style={{ fontSize: "14px", fontWeight: "500", color: "#4a5568", lineHeight: "1.4" }}>{user?.address}</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                     </div>
 
-                    {/* EDIT STUDENT DETAILS MODAL */}
+                    {/* EDIT DETAILS MODAL */}
                     {isEditOpen && (
                         <div className="portal-modal-overlay">
                             <div className="portal-modal-container">
                                 <div className="portal-modal-header">
-                                    <h3>Edit Student Profile</h3>
+                                    <h3>{isStaff ? "Edit Staff Profile" : "Edit Student Profile"}</h3>
                                     <button onClick={() => setIsEditOpen(false)} className="portal-modal-close">
                                         <i className="fas fa-times"></i>
                                     </button>
@@ -463,16 +500,18 @@ const MyProfile = () => {
                                                     />
                                                 </div>
 
-                                                <div className="portal-form-group">
-                                                    <label>Parent/Guardian Name:</label>
-                                                    <input 
-                                                        type="text" 
-                                                        className="portal-form-input" 
-                                                        value={editParentName}
-                                                        onChange={(e) => setEditParentName(e.target.value)}
-                                                        required 
-                                                    />
-                                                </div>
+                                                {!isStaff && (
+                                                    <div className="portal-form-group">
+                                                        <label>Parent/Guardian Name:</label>
+                                                        <input 
+                                                            type="text" 
+                                                            className="portal-form-input" 
+                                                            value={editParentName}
+                                                            onChange={(e) => setEditParentName(e.target.value)}
+                                                            required 
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className="portal-form-group">
@@ -486,16 +525,18 @@ const MyProfile = () => {
                                                 />
                                             </div>
 
-                                            <div className="portal-form-group">
-                                                <label>Course / Batch:</label>
-                                                <input 
-                                                    type="text" 
-                                                    className="portal-form-input" 
-                                                    value={editBatch}
-                                                    onChange={(e) => setEditBatch(e.target.value)}
-                                                    required 
-                                                />
-                                            </div>
+                                            {!isStaff && (
+                                                <div className="portal-form-group">
+                                                    <label>Course / Batch:</label>
+                                                    <input 
+                                                        type="text" 
+                                                        className="portal-form-input" 
+                                                        value={editBatch}
+                                                        onChange={(e) => setEditBatch(e.target.value)}
+                                                        required 
+                                                    />
+                                                </div>
+                                            )}
 
                                             <div className="portal-form-group">
                                                 <label>Residential Address:</label>
@@ -561,7 +602,7 @@ const MyProfile = () => {
                                 </button>
                             </div>
 
-                            {/* WhatsApp Crop Workspace (captures desktop mouse / mobile touch dragging & pinching) */}
+                            {/* WhatsApp Crop Workspace */}
                             <div 
                                 ref={cropContainerRef}
                                 className="whatsapp-crop-workspace"
@@ -590,14 +631,14 @@ const MyProfile = () => {
                                     }}
                                 />
 
-                                {/* Bounding Square Crop Box with White Mobile Corner Brackets */}
+                                {/* Bounding Square Crop Box */}
                                 <div className="whatsapp-crop-box">
                                     <div className="whatsapp-crop-corner tl"></div>
                                     <div className="whatsapp-crop-corner tr"></div>
                                     <div className="whatsapp-crop-corner bl"></div>
                                     <div className="whatsapp-crop-corner br"></div>
 
-                                    {/* Responsive 3x3 Grid Lines (Only highlighted when dragging or pinching) */}
+                                    {/* Responsive 3x3 Grid Lines */}
                                     <div className={`whatsapp-grid-lines ${isDragging || isPinching ? "active" : ""}`}>
                                         <div className="whatsapp-grid-h1"></div>
                                         <div className="whatsapp-grid-h2"></div>
@@ -605,7 +646,7 @@ const MyProfile = () => {
                                         <div className="whatsapp-grid-v2"></div>
                                     </div>
 
-                                    {/* Dashboard Circle Avatar cutout helper */}
+                                    {/* Circle Avatar cutout helper */}
                                     <div className="whatsapp-circle-mask"></div>
                                 </div>
                             </div>

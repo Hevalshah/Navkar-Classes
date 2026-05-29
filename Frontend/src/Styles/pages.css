@@ -316,6 +316,18 @@
 .portal-btn.outline { background: transparent; border-color: #cbd5e1; color: #4a5568; }
 .portal-btn.outline:hover { background-color: #f7fafc; border-color: #a0aec0; }
 
+.portal-btn.outline-primary { background: transparent; border-color: #007bff; color: #007bff; }
+.portal-btn.outline-primary:hover { background-color: #007bff; color: white; transform: translateY(-1px); }
+
+.portal-btn.outline-danger { background: transparent; border-color: #e74c3c; color: #e74c3c; }
+.portal-btn.outline-danger:hover { background-color: #e74c3c; color: white; transform: translateY(-1px); }
+
+.portal-btn.outline-success { background: transparent; border-color: #2ecc71; color: #2ecc71; }
+.portal-btn.outline-success:hover { background-color: #2ecc71; color: white; transform: translateY(-1px); }
+
+.portal-btn.outline-secondary { background: transparent; border-color: #718096; color: #718096; }
+.portal-btn.outline-secondary:hover { background-color: #718096; color: white; transform: translateY(-1px); }
+
 .portal-btn.sm {
     padding: 6px 12px;
     font-size: 12px;

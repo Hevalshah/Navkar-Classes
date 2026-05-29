@@ -12,6 +12,23 @@ export const registerUser = async (data) => {
   return res.json();
 };
 
+export const registerStudent = async (data, token) => {
+  const res = await fetch("http://localhost:5000/api/auth/register-student", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Student registration failed");
+  }
+  return res.json();
+};
+
 export const getProfile = async (token) => {
   const res = await fetch("http://localhost:5000/api/auth/me", {
     method: "GET",
@@ -22,6 +39,23 @@ export const getProfile = async (token) => {
   });
 
   if (!res.ok) throw new Error("Failed to fetch profile");
+  return res.json();
+};
+
+export const updateProfile = async (token, data) => {
+  const res = await fetch("http://localhost:5000/api/auth/update-profile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Profile update failed");
+  }
   return res.json();
 };
 

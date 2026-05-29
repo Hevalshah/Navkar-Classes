@@ -1,14 +1,14 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Landing from "./Components/Landing";
 import Login from "./Components/Login";
 import Register from "./Components/Register";
 import StudentDashboard from "./Components/StudentDashboard";
 import AdminDashboard from "./Components/AdminDashboard";
 
-// Missing Pages Imports
+// Pages Imports
 import Timetable from "./Components/Timetable";
 import Attendance from "./Components/Attendance";
-import AdmitCard from "./Components/AdmitCard";
 import Result from "./Components/Result";
 import PayFees from "./Components/PayFees";
 import FeeHistory from "./Components/FeeHistory";
@@ -18,13 +18,16 @@ import CertificateRequest from "./Components/CertificateRequest";
 import Feedback from "./Components/Feedback";
 import MyProfile from "./Components/MyProfile";
 import ChangePassword from "./Components/ChangePassword";
+import StudentRegistration from "./Components/StudentRegistration";
+import StudentManagement from "./Components/StudentManagement";
 
 function App() {
   return (
     <Router>
       <Routes>
         {/* Core Auth & Dashboard Routes */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
@@ -34,7 +37,6 @@ function App() {
         <Route path="/attendance" element={<Attendance />} />
 
         {/* Exam Dropdown */}
-        <Route path="/admit-card" element={<AdmitCard />} />
         <Route path="/result" element={<Result />} />
 
         {/* Fee Dropdown */}
@@ -44,6 +46,10 @@ function App() {
         {/* Courses Dropdown */}
         <Route path="/materials" element={<Materials />} />
         <Route path="/tests" element={<Tests />} />
+
+        {/* Student Registration (Staff only) */}
+        <Route path="/student-registration" element={<StudentRegistration />} />
+        <Route path="/students" element={<StudentManagement />} />
 
         {/* Other Dropdown */}
         <Route path="/certificate-request" element={<CertificateRequest />} />

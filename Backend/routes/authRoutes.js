@@ -2,8 +2,17 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const authMiddleware = require("../middleware/authMiddleware");
+const { pool } = require("../config/db");
 
 const router = express.Router();
+
+const isStaffUser = (req, res, next) => {
+  if (req.user && (req.user.role === "staff" || req.user.role === "admin")) {
+    return next();
+  }
+  res.status(403).json({ message: "Access denied. Staff only." });
+};
 
 // ===============================
 // REGISTER ROUTE
@@ -47,6 +56,111 @@ router.post("/register", async (req, res) => {
 });
 
 // ===============================
+// REGISTER STUDENT ROUTE (STAFF ROLE ONLY)
+// ===============================
+router.post("/register-student", authMiddleware, isStaffUser, async (req, res) => {
+  try {
+    const { name, mobile, email, address, course, assignedBatch, standardId, batchId, username, password } = req.body;
+    console.log("Register Student Request:", { name, email });
+
+    // Validation for required fields
+    if (!name || !email || !standardId || !batchId || !password) {
+      return res.status(400).json({ message: "Full Name, Email, Class, Batch, and Temporary Password are required fields" });
+    }
+
+    const [batchRows] = await pool.execute(
+      "SELECT id, name FROM batches WHERE id = ? AND standard_id = ? LIMIT 1",
+      [batchId, standardId]
+    );
+    if (batchRows.length === 0) {
+      return res.status(400).json({ message: "Selected batch does not belong to the selected class" });
+    }
+
+    // Validation for duplicate email
+    const existingEmailUser = await User.findByEmail(email);
+    if (existingEmailUser) {
+      return res.status(400).json({ message: "Email is already registered" });
+    }
+
+    // Validation for duplicate username (if provided)
+    if (username) {
+      const existingUsernameUser = await User.findByUsername(username);
+      if (existingUsernameUser) {
+        return res.status(400).json({ message: "Username is already taken" });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({
+      name,
+      mobile: mobile || null,
+      email,
+      username: username || null,
+      password: hashedPassword,
+      role: "student",
+      address: address || null,
+      course: course || null,
+      assignedBatch: assignedBatch || batchRows[0].name,
+      standardId: standardId ? parseInt(standardId) : null,
+      batchId: batchId ? parseInt(batchId) : null
+    });
+
+    console.log("Student registered successfully:", user.id);
+    res.status(201).json({ message: "Student registered successfully", userId: user.id });
+  } catch (error) {
+    console.error("Student Registration Error:", error);
+    res.status(500).json({ message: "Server error during student registration", error: error.message });
+  }
+});
+
+// ===============================
+// UPDATE PROFILE ROUTE
+// ===============================
+router.put("/update-profile", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, mobile, parentName, email, address, username } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ message: "Full Name and Email are required fields" });
+    }
+
+    // Validation for duplicate email
+    if (email) {
+      const existingEmail = await User.findByEmail(email);
+      if (existingEmail && existingEmail.id !== userId) {
+        return res.status(400).json({ message: "Email is already registered by another user" });
+      }
+    }
+
+    // Validation for duplicate username (if provided)
+    if (username) {
+      const existingUsername = await User.findByUsername(username);
+      if (existingUsername && existingUsername.id !== userId) {
+        return res.status(400).json({ message: "Username is already taken" });
+      }
+    }
+
+    const updatedUser = await User.updateProfile(userId, {
+      name,
+      mobile,
+      parentName,
+      email,
+      address,
+      username
+    });
+
+    console.log("Profile updated successfully for user ID:", userId);
+    res.json({ message: "Profile updated successfully", user: User.publicUser(updatedUser) });
+  } catch (error) {
+    console.error("Profile Update Error:", error);
+    res.status(500).json({ message: "Server error during profile update", error: error.message });
+  }
+});
+
+// ===============================
 // GET CURRENT USER ROUTE
 // ===============================
 router.get("/me", async (req, res) => {
@@ -58,7 +172,7 @@ router.get("/me", async (req, res) => {
 
     const token = authHeader.replace("Bearer ", "");
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const user = await User.findActiveById(decoded.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

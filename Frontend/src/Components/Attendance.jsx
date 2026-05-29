@@ -5,84 +5,28 @@ import { getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
-const Attendance = () => {
-    const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-    const [selectedMonth, setSelectedMonth] = useState("All");
+// --- STUDENT ATTENDANCE COMPONENT ---
+const StudentAttendance = ({ user, handleLogout }) => {
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
+    const token = localStorage.getItem("token");
 
-    const fallbackUser = {
-        name: "Student (Demo Mode)",
-        role: "student",
-        profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+    const fetchAttendanceHistory = async () => {
+        try {
+            const res = await fetch("http://localhost:5000/api/attendance/history", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) setAttendanceRecords(await res.json());
+        } catch (e) { console.error(e); }
     };
-
-    // Dummy Attendance records
-    const attendanceRecords = [
-        { id: 1, date: "15-May-2026", subject: "Advanced Accounting", time: "08:30 AM", status: "Present", teacher: "Prof. R. C. Shah" },
-        { id: 2, date: "15-May-2026", subject: "Corporate & Other Laws", time: "11:00 AM", status: "Present", teacher: "Prof. N. K. Vyas" },
-        { id: 3, date: "14-May-2026", subject: "Taxation (Direct Tax)", time: "08:30 AM", status: "Present", teacher: "CA Harish Mehta" },
-        { id: 4, date: "14-May-2026", subject: "Strategic Management", time: "11:00 AM", status: "Absent", teacher: "Prof. Aniket Trivedi" },
-        { id: 5, date: "13-May-2026", subject: "Advanced Accounting", time: "08:30 AM", status: "Present", teacher: "Prof. R. C. Shah" },
-        { id: 6, date: "13-May-2026", subject: "Corporate & Other Laws", time: "11:00 AM", status: "Present", teacher: "Prof. N. K. Vyas" },
-        { id: 7, date: "12-May-2026", subject: "Taxation (Indirect Tax)", time: "08:30 AM", status: "Present", teacher: "CA Harish Mehta" },
-        { id: 8, date: "12-May-2026", subject: "Cost & Management Accounting", time: "11:00 AM", status: "Present", teacher: "Prof. Suresh Patel" },
-        { id: 9, date: "11-May-2026", subject: "Cost & Management Accounting", time: "08:30 AM", status: "Late", teacher: "Prof. Suresh Patel" },
-        { id: 10, date: "11-May-2026", subject: "Auditing & Assurance", time: "11:00 AM", status: "Present", teacher: "CA Preeti Desai" },
-        { id: 11, date: "08-May-2026", subject: "Advanced Accounting", time: "08:30 AM", status: "Present", teacher: "Prof. R. C. Shah" },
-        { id: 12, date: "08-May-2026", subject: "Corporate & Other Laws", time: "11:00 AM", status: "Present", teacher: "Prof. N. K. Vyas" },
-        { id: 13, date: "28-Apr-2026", subject: "Taxation (Direct Tax)", time: "08:30 AM", status: "Present", teacher: "CA Harish Mehta" },
-        { id: 14, date: "28-Apr-2026", subject: "Strategic Management", time: "11:00 AM", status: "Present", teacher: "Prof. Aniket Trivedi" },
-        { id: 15, date: "27-Apr-2026", subject: "Advanced Accounting", time: "08:30 AM", status: "Absent", teacher: "Prof. R. C. Shah" }
-    ];
-
-    const months = ["All", "May 2026", "April 2026"];
 
     useEffect(() => {
-        const fetchProfile = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                setUser(fallbackUser);
-                return;
-            }
-            try {
-                const userData = await getProfile(token);
-                setUser(userData);
-            } catch (error) {
-                console.warn("Failed to load profile from API, falling back to mock user", error);
-                setUser(fallbackUser);
-            }
-        };
-        fetchProfile();
+        fetchAttendanceHistory();
     }, []);
 
-    const handleLogout = async () => {
-        const token = localStorage.getItem("token");
-        try {
-            if (token) {
-                await logoutUser(token);
-            }
-        } catch (error) {
-            console.error("Failed to record logout", error);
-        } finally {
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            navigate("/");
-        }
-    };
-
-    // Filter by month
-    const filteredRecords = attendanceRecords.filter(rec => {
-        if (selectedMonth === "All") return true;
-        if (selectedMonth === "May 2026") return rec.date.includes("May-2026");
-        if (selectedMonth === "April 2026") return rec.date.includes("Apr-2026");
-        return true;
-    });
-
-    // Stats calculations
-    const totalLectures = filteredRecords.length;
-    const presentCount = filteredRecords.filter(r => r.status === "Present").length;
-    const lateCount = filteredRecords.filter(r => r.status === "Late").length;
-    const absentCount = filteredRecords.filter(r => r.status === "Absent").length;
+    const totalLectures = attendanceRecords.length;
+    const presentCount = attendanceRecords.filter(r => r.status === "Present").length;
+    const lateCount = attendanceRecords.filter(r => r.status === "Late").length;
+    const absentCount = attendanceRecords.filter(r => r.status === "Absent").length;
     const attendancePercentage = totalLectures > 0 
         ? Math.round(((presentCount + lateCount * 0.7) / totalLectures) * 100) 
         : 0;
@@ -99,63 +43,36 @@ const Attendance = () => {
     return (
         <div className="dashboard-layout">
             <Navbar role="student" user={user} onLogout={handleLogout} />
-
             <div className="dashboard-main-container">
                 <div className="page-container">
-                    {/* Header */}
                     <div className="page-header">
                         <h2><i className="fas fa-user-check"></i> Attendance History</h2>
-                        
-                        <div className="header-actions">
-                            <div className="portal-form-group" style={{ flexDirection: "row", alignItems: "center", gap: "10px" }}>
-                                <label style={{ whiteSpace: "nowrap" }}>Select Month:</label>
-                                <select 
-                                    className="select-filter" 
-                                    value={selectedMonth} 
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                >
-                                    {months.map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                            </div>
-                        </div>
                     </div>
 
-                    {/* Stats Dashboard */}
                     <div className="summary-grid">
                         <div className="summary-card success">
-                            <div className="summary-card-icon">
-                                <i className="fas fa-percentage"></i>
-                            </div>
+                            <div className="summary-card-icon"><i className="fas fa-percentage"></i></div>
                             <div className="summary-card-details">
                                 <h4>Attendance Rate</h4>
                                 <p>{attendancePercentage}%</p>
                             </div>
                         </div>
-
                         <div className="summary-card primary">
-                            <div className="summary-card-icon">
-                                <i className="fas fa-chalkboard-teacher"></i>
-                            </div>
+                            <div className="summary-card-icon"><i className="fas fa-chalkboard-teacher"></i></div>
                             <div className="summary-card-details">
                                 <h4>Total Conducted</h4>
                                 <p>{totalLectures}</p>
                             </div>
                         </div>
-
                         <div className="summary-card info">
-                            <div className="summary-card-icon">
-                                <i className="fas fa-check-circle"></i>
-                            </div>
+                            <div className="summary-card-icon"><i className="fas fa-check-circle"></i></div>
                             <div className="summary-card-details">
                                 <h4>Total Present</h4>
                                 <p>{presentCount}</p>
                             </div>
                         </div>
-
                         <div className="summary-card danger">
-                            <div className="summary-card-icon">
-                                <i className="fas fa-times-circle"></i>
-                            </div>
+                            <div className="summary-card-icon"><i className="fas fa-times-circle"></i></div>
                             <div className="summary-card-details">
                                 <h4>Total Absent</h4>
                                 <p>{absentCount}</p>
@@ -163,28 +80,23 @@ const Attendance = () => {
                         </div>
                     </div>
 
-                    {/* Attendance Table */}
                     <div className="portal-card">
-                        {filteredRecords.length > 0 ? (
+                        {attendanceRecords.length > 0 ? (
                             <div className="table-responsive">
                                 <table className="portal-table">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Subject</th>
-                                            <th>Faculty In-Charge</th>
-                                            <th>Lecture Time</th>
+                                            <th>Batch / Class</th>
                                             <th>Status</th>
                                             <th>Performance Marker</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredRecords.map(rec => (
+                                        {attendanceRecords.map(rec => (
                                             <tr key={rec.id}>
-                                                <td><strong>{rec.date}</strong></td>
-                                                <td style={{ fontWeight: "500", color: "#007bff" }}>{rec.subject}</td>
-                                                <td>{rec.teacher}</td>
-                                                <td><i className="far fa-clock" style={{ marginRight: "6px", color: "#a0aec0" }}></i>{rec.time}</td>
+                                                <td><strong>{new Date(rec.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></td>
+                                                <td style={{ fontWeight: "500", color: "#007bff" }}>{rec.batch_name}</td>
                                                 <td>{getStatusBadge(rec.status)}</td>
                                                 <td>
                                                     {rec.status === "Present" && <span style={{ color: "#2ecc71" }}><i className="fas fa-smile"></i> Excellent</span>}
@@ -200,7 +112,7 @@ const Attendance = () => {
                             <div className="no-record-box">
                                 <i className="fas fa-clipboard-list"></i>
                                 <h4>No Attendance Records Found</h4>
-                                <p>There are no attendance records matching your chosen filters.</p>
+                                <p>You have no attendance records logged in the database yet.</p>
                             </div>
                         )}
                     </div>
@@ -208,6 +120,312 @@ const Attendance = () => {
             </div>
         </div>
     );
+};
+
+// --- STAFF ATTENDANCE COMPONENT ---
+const StaffAttendance = ({ user, handleLogout }) => {
+    const [selectedBatch, setSelectedBatch] = useState("");
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [students, setStudents] = useState([]);
+    const [batches, setBatches] = useState([]);
+
+    const token = localStorage.getItem("token");
+
+    const loadBatches = async () => {
+        try {
+            const res = await fetch("http://localhost:5000/api/admin/batches");
+            if (res.ok) {
+                const data = await res.json();
+                setBatches(data);
+                if (data.length > 0 && !selectedBatch) {
+                    setSelectedBatch(data[0].id.toString());
+                }
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const loadStudents = async () => {
+        if (!selectedBatch) return;
+        try {
+            const res = await fetch(`http://localhost:5000/api/attendance/students/${selectedBatch}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const list = await res.json();
+                // Set default status to 'Present' for each student
+                setStudents(list.map(s => ({ ...s, status: "Present" })));
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    useEffect(() => {
+        loadBatches();
+    }, []);
+
+    useEffect(() => {
+        loadStudents();
+    }, [selectedBatch]);
+
+    const handleStatusChange = (id, newStatus) => {
+        setStudents(students.map(s => s.id === id ? { ...s, status: newStatus } : s));
+    };
+
+    const handleBulkAction = (newStatus) => {
+        if(window.confirm(`Mark all visible students as ${newStatus}?`)) {
+            const updatedStudents = students.map(s => {
+                if(s.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    return { ...s, status: newStatus };
+                }
+                return s;
+            });
+            setStudents(updatedStudents);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!selectedBatch) return;
+        try {
+            const res = await fetch("http://localhost:5000/api/attendance/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    batchId: parseInt(selectedBatch),
+                    date: selectedDate,
+                    attendanceData: students.map(s => ({ studentId: s.id, status: s.status }))
+                })
+            });
+
+            if (res.ok) {
+                alert("Attendance records saved successfully!");
+            } else {
+                alert("Failed to submit attendance records.");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const filteredStudents = students.filter(s => 
+        s.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const presentCount = students.filter(s => s.status === "Present").length;
+    const absentCount = students.filter(s => s.status === "Absent").length;
+    const lateCount = students.filter(s => s.status === "Late").length;
+
+    const getStatusBtnClass = (studentStatus, currentStatus) => {
+        if (studentStatus !== currentStatus) return "portal-btn outline-secondary";
+        if (currentStatus === "Present") return "portal-btn success";
+        if (currentStatus === "Absent") return "portal-btn danger";
+        if (currentStatus === "Late") return "portal-btn warning";
+        return "portal-btn outline-secondary";
+    };
+
+    return (
+        <div className="dashboard-layout">
+            <Navbar role="staff" user={user} onLogout={handleLogout} />
+            <div className="dashboard-main-container">
+                <div className="page-container">
+                    <div className="page-header">
+                        <h2><i className="fas fa-tasks"></i> Mark Attendance</h2>
+                        
+                        <div className="header-actions">
+                            <button className="portal-btn success" onClick={handleSave}>
+                                <i className="fas fa-save"></i> Save Attendance
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="portal-card" style={{ marginBottom: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                            <div className="portal-form-group">
+                                <label>Batch / Class</label>
+                                <select className="form-input" value={selectedBatch} onChange={(e) => setSelectedBatch(e.target.value)}>
+                                    <option value="">Select Batch</option>
+                                    {batches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.standard_name})</option>)}
+                                </select>
+                            </div>
+                            <div className="portal-form-group">
+                                <label>Date</label>
+                                <input type="date" className="form-input" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="summary-grid" style={{ marginBottom: '20px' }}>
+                        <div className="summary-card info">
+                            <div className="summary-card-icon"><i className="fas fa-users"></i></div>
+                            <div className="summary-card-details">
+                                <h4>Total Students</h4>
+                                <p>{students.length}</p>
+                            </div>
+                        </div>
+                        <div className="summary-card success">
+                            <div className="summary-card-icon"><i className="fas fa-check-circle"></i></div>
+                            <div className="summary-card-details">
+                                <h4>Present</h4>
+                                <p>{presentCount}</p>
+                            </div>
+                        </div>
+                        <div className="summary-card danger">
+                            <div className="summary-card-icon"><i className="fas fa-times-circle"></i></div>
+                            <div className="summary-card-details">
+                                <h4>Absent</h4>
+                                <p>{absentCount}</p>
+                            </div>
+                        </div>
+                        <div className="summary-card warning">
+                            <div className="summary-card-icon"><i className="fas fa-clock"></i></div>
+                            <div className="summary-card-details">
+                                <h4>Late</h4>
+                                <p>{lateCount}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="portal-card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                            <div className="search-bar" style={{ flex: 1, minWidth: '250px' }}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Search student name..." 
+                                    className="form-input" 
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{ width: '100%', padding: '10px 15px' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <span style={{ padding: '8px', color: '#4a5568', fontWeight: '500' }}>Bulk Actions:</span>
+                                <button className="portal-btn outline-success" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleBulkAction("Present")}>Mark All Present</button>
+                                <button className="portal-btn outline-danger" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => handleBulkAction("Absent")}>Mark All Absent</button>
+                            </div>
+                        </div>
+
+                        <div className="table-responsive">
+                            <table className="portal-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Student Name</th>
+                                        <th>Current Status</th>
+                                        <th style={{ textAlign: 'center' }}>Mark Attendance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredStudents.length > 0 ? (
+                                        filteredStudents.map(student => (
+                                            <tr key={student.id}>
+                                                <td><strong>#{student.id}</strong></td>
+                                                <td style={{ color: "#007bff", fontWeight: "500" }}>{student.name}</td>
+                                                <td>
+                                                    <span className={`portal-badge ${student.status === "Present" ? "success" : student.status === "Absent" ? "danger" : "warning"}`}>
+                                                        {student.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                        <button 
+                                                            className={getStatusBtnClass(student.status, "Present")} 
+                                                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                                                            onClick={() => handleStatusChange(student.id, "Present")}
+                                                        >
+                                                            Present
+                                                        </button>
+                                                        <button 
+                                                            className={getStatusBtnClass(student.status, "Absent")} 
+                                                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                                                            onClick={() => handleStatusChange(student.id, "Absent")}
+                                                        >
+                                                            Absent
+                                                        </button>
+                                                        <button 
+                                                            className={getStatusBtnClass(student.status, "Late")} 
+                                                            style={{ padding: '6px 12px', fontSize: '13px' }}
+                                                            onClick={() => handleStatusChange(student.id, "Late")}
+                                                        >
+                                                            Late
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>No students found matching your search.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const fallbackUser = {
+    name: "User (Demo Mode)",
+    role: "student",
+    profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+};
+
+// --- MAIN COMPONENT ---
+const Attendance = () => {
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [role, setRole] = useState("student");
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const token = localStorage.getItem("token");
+            const storedRole = localStorage.getItem("role") || "student";
+            setRole(storedRole);
+            
+            if (!token) {
+                setUser({ ...fallbackUser, role: storedRole });
+                setLoading(false);
+                return;
+            }
+            try {
+                const userData = await getProfile(token);
+                setUser(userData);
+                if (userData.role) setRole(userData.role);
+            } catch (error) {
+                setUser({ ...fallbackUser, role: storedRole });
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const handleLogout = async () => {
+        const token = localStorage.getItem("token");
+        try {
+            if (token) await logoutUser(token);
+        } catch (error) {
+            console.error("Logout failed", error);
+        } finally {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            navigate("/");
+        }
+    };
+
+    if (loading) return null;
+
+    if (role === "staff" || role === "admin") {
+        return <StaffAttendance user={user} handleLogout={handleLogout} />;
+    }
+
+    return <StudentAttendance user={user} handleLogout={handleLogout} />;
 };
 
 export default Attendance;

@@ -16,7 +16,7 @@ const Result = () => {
         name: "John Doe",
         role: "student",
         profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        batch: "CA Foundation - Batch A"
+        batch: "Standard 10 - Batch A"
     };
 
     const termsList = [
@@ -26,18 +26,18 @@ const Result = () => {
 
     // Dummy Results Data for Mid-Semester Exam 2025
     const resultsMid2025 = [
-        { code: "CA101", subject: "Principles & Practice of Accounting", max: 100, obtained: 82, grade: "A", status: "Pass" },
-        { code: "CA102", subject: "Business Laws", max: 100, obtained: 74, grade: "B+", status: "Pass" },
-        { code: "CA103", subject: "Business Mathematics", max: 100, obtained: 91, grade: "O", status: "Pass" },
-        { code: "CA104", subject: "Business Economics", max: 100, obtained: 68, grade: "B", status: "Pass" }
+        { code: "MTH101", subject: "Mathematics / Algebra", max: 100, obtained: 82, grade: "A", status: "Pass" },
+        { code: "SCI102", subject: "Science & Technology", max: 100, obtained: 74, grade: "B+", status: "Pass" },
+        { code: "SST103", subject: "Social Studies & History", max: 100, obtained: 91, grade: "O", status: "Pass" },
+        { code: "ENG104", subject: "English Literature", max: 100, obtained: 68, grade: "B", status: "Pass" }
     ];
 
     // Dummy Results Data for Pre-Mock Board 2026
     const resultsMock2026 = [
-        { code: "CA101", subject: "Principles & Practice of Accounting", max: 100, obtained: 88, grade: "A+", status: "Pass" },
-        { code: "CA102", subject: "Business Laws", max: 100, obtained: 65, grade: "B", status: "Pass" },
-        { code: "CA103", subject: "Business Mathematics", max: 100, obtained: 95, grade: "O", status: "Pass" },
-        { code: "CA104", subject: "Business Economics", max: 100, obtained: 85, grade: "A", status: "Pass" }
+        { code: "MTH101", subject: "Mathematics / Algebra", max: 100, obtained: 88, grade: "A+", status: "Pass" },
+        { code: "SCI102", subject: "Science & Technology", max: 100, obtained: 65, grade: "B", status: "Pass" },
+        { code: "SST103", subject: "Social Studies & History", max: 100, obtained: 95, grade: "O", status: "Pass" },
+        { code: "ENG104", subject: "English Literature", max: 100, obtained: 85, grade: "A", status: "Pass" }
     ];
 
     useEffect(() => {
@@ -51,7 +51,6 @@ const Result = () => {
                 const userData = await getProfile(token);
                 setUser(userData);
             } catch (error) {
-                console.warn("Failed to load profile from API, falling back to mock user", error);
                 setUser(fallbackUser);
             }
         };
@@ -77,13 +76,10 @@ const Result = () => {
         return selectedTerm === "MID-2025" ? resultsMid2025 : resultsMock2026;
     };
 
-    // Calculate Summary Stats
     const currentResults = getResults();
     const totalMax = currentResults.reduce((sum, item) => sum + item.max, 0);
     const totalObtained = currentResults.reduce((sum, item) => sum + item.obtained, 0);
     const overallPercentage = Math.round((totalObtained / totalMax) * 100);
-    
-    // Calculate Mock GPA
     const cgpa = (overallPercentage / 10).toFixed(1);
 
     const handlePrint = () => {
@@ -215,7 +211,7 @@ const Result = () => {
                             </div>
                             <div>
                                 <span style={{ color: "#718096", display: "block", fontSize: "11px", textTransform: "uppercase" }}>Current Batch</span>
-                                <strong>{user?.batch || "CA Foundation - Batch A"}</strong>
+                                <strong>{user?.batch || "Standard 10 - Batch A"}</strong>
                             </div>
                             <div>
                                 <span style={{ color: "#718096", display: "block", fontSize: "11px", textTransform: "uppercase" }}>Exam Name</span>

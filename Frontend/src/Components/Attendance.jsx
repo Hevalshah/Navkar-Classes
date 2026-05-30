@@ -96,12 +96,12 @@ const StudentAttendance = ({ user, handleLogout }) => {
                                         {attendanceRecords.map(rec => (
                                             <tr key={rec.id}>
                                                 <td><strong>{new Date(rec.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></td>
-                                                <td style={{ fontWeight: "500", color: "#007bff" }}>{rec.batch_name}</td>
+                                                <td style={{ fontWeight: "500", color: "var(--primary-color)" }}>{rec.batch_name}</td>
                                                 <td>{getStatusBadge(rec.status)}</td>
                                                 <td>
                                                     {rec.status === "Present" && <span style={{ color: "#2ecc71" }}><i className="fas fa-smile"></i> Excellent</span>}
                                                     {rec.status === "Late" && <span style={{ color: "#f39c12" }}><i className="fas fa-meh-blank"></i> Warned</span>}
-                                                    {rec.status === "Absent" && <span style={{ color: "#e74c3c" }}><i className="fas fa-frown"></i> Action Required</span>}
+                                                    {rec.status === "Absent" && <span style={{ color: "var(--danger-color)" }}><i className="fas fa-frown"></i> Action Required</span>}
                                                 </td>
                                             </tr>
                                         ))}
@@ -123,7 +123,7 @@ const StudentAttendance = ({ user, handleLogout }) => {
 };
 
 // --- STAFF ATTENDANCE COMPONENT ---
-const StaffAttendance = ({ user, handleLogout }) => {
+const StaffAttendance = ({ user, handleLogout, role }) => {
     const [selectedBatch, setSelectedBatch] = useState("");
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -227,7 +227,7 @@ const StaffAttendance = ({ user, handleLogout }) => {
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="staff" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
             <div className="dashboard-main-container">
                 <div className="page-container">
                     <div className="page-header">
@@ -321,7 +321,7 @@ const StaffAttendance = ({ user, handleLogout }) => {
                                         filteredStudents.map(student => (
                                             <tr key={student.id}>
                                                 <td><strong>#{student.id}</strong></td>
-                                                <td style={{ color: "#007bff", fontWeight: "500" }}>{student.name}</td>
+                                                <td style={{ color: "var(--primary-color)", fontWeight: "500" }}>{student.name}</td>
                                                 <td>
                                                     <span className={`portal-badge ${student.status === "Present" ? "success" : student.status === "Absent" ? "danger" : "warning"}`}>
                                                         {student.status}
@@ -421,8 +421,8 @@ const Attendance = () => {
 
     if (loading) return null;
 
-    if (role === "staff" || role === "admin") {
-        return <StaffAttendance user={user} handleLogout={handleLogout} />;
+    if (role === "staff" || role === "admin" || role === "teacher") {
+        return <StaffAttendance user={user} handleLogout={handleLogout} role={role} />;
     }
 
     return <StudentAttendance user={user} handleLogout={handleLogout} />;

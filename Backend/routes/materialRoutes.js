@@ -77,7 +77,7 @@ router.get("/", authMiddleware, async (req, res) => {
 // ===============================
 router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff") {
+    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -115,7 +115,7 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
 // ===============================
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff") {
+    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -140,7 +140,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
 // ===============================
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff") {
+    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
       return res.status(403).json({ message: "Access denied" });
     }
 

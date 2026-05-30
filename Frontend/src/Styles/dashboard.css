@@ -1,10 +1,10 @@
 /* Global Reset & Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f6f9;
-    color: #333;
+    font-family: var(--app-font);
+    background-color: var(--bg-light);
+    color: var(--text-dark);
 }
 
 .dashboard-layout {
@@ -17,10 +17,9 @@ body {
    Navbar Styles
    ============================ */
 .navbar {
-    background-color: #343a40;
-    /* Dark background */
+    background: linear-gradient(135deg, var(--primary-dark), #1a202c);
     color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(26, 32, 44, 0.14);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -51,9 +50,9 @@ body {
 
 .institute-name {
     font-size: 20px;
-    font-weight: 700;
-    color: #e74c3c;
-    /* Red accent like Parul */
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.2px;
 }
 
 .nav-menu {
@@ -69,7 +68,7 @@ body {
 }
 
 .nav-link {
-    color: #adb5bd;
+    color: rgba(255, 255, 255, 0.72);
     text-decoration: none;
     padding: 18px 15px;
     display: block;
@@ -82,7 +81,7 @@ body {
 .nav-link:hover,
 .nav-item.active .nav-link {
     color: white;
-    background-color: #495057;
+    background-color: rgba(230, 255, 250, 0.12);
 }
 
 .nav-link i {
@@ -95,9 +94,11 @@ body {
     position: absolute;
     top: 100%;
     left: 0;
-    background-color: #343a40;
-    min-width: 200px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    min-width: 210px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 18px 30px rgba(26, 32, 44, 0.16);
     display: none;
     flex-direction: column;
     z-index: 1001;
@@ -108,12 +109,12 @@ body {
 }
 
 .dropdown-item {
-    color: #adb5bd;
+    color: var(--text-dark);
     padding: 12px 20px;
     text-decoration: none;
     font-size: 14px;
     transition: background 0.2s;
-    border-bottom: 1px solid #495057;
+    border-bottom: 1px solid var(--border-color);
     text-align: left;
     background: none;
     border: none;
@@ -126,8 +127,8 @@ body {
 }
 
 .dropdown-item:hover {
-    background-color: #495057;
-    color: white;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
 }
 
 /* Profile Section in Navbar */
@@ -156,15 +157,16 @@ body {
 .nav-user-name {
     font-size: 13px;
     font-weight: 600;
-    color: #2ecc71;
-    /* Green text */
+    color: #ffffff;
 }
 
 .profile-dropdown {
     position: absolute;
     top: 100%;
     right: 0;
-    background-color: #343a40;
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     min-width: 180px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     display: none;
@@ -176,12 +178,26 @@ body {
 }
 
 .logout-item {
-    color: #e74c3c;
+    color: var(--danger-color);
 }
 
 .logout-item:hover {
-    background-color: #c0392b;
-    color: white;
+    background-color: #fff5f5;
+    color: var(--danger-color);
+}
+
+.profile-dropdown .dropdown-item {
+    color: var(--text-dark);
+}
+
+.profile-dropdown .dropdown-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.profile-dropdown .logout-item:hover {
+    background-color: #fff5f5;
+    color: var(--danger-color);
 }
 
 /* Mobile Menu */
@@ -211,18 +227,18 @@ body {
 
 .dashboard-header-title {
     margin-bottom: 20px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
 }
 
 .dashboard-header-title h2 {
     font-size: 24px;
-    color: #555;
-    font-weight: 400;
+    color: var(--text-dark);
+    font-weight: 600;
 }
 
 .student-name-light {
-    color: #999;
+    color: var(--text-light);
     font-size: 18px;
     margin-left: 10px;
 }
@@ -244,13 +260,12 @@ body {
 
 /* Student Profile Card */
 .student-profile-card {
-    background: white;
+    background: var(--surface-color);
     padding: 20px;
-    border-radius: 4px;
+    border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     text-align: center;
-    border-top: 3px solid #fff;
-    /* Placeholder for top border */
+    border-top: 4px solid var(--primary-color);
 }
 
 .profile-image-container {
@@ -268,13 +283,13 @@ body {
 
 .profile-name {
     font-size: 18px;
-    color: #007bff;
+    color: var(--primary-color);
     margin-bottom: 5px;
 }
 
 .status-badge {
-    background-color: #28a745;
-    color: white;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
     padding: 2px 8px;
     border-radius: 3px;
     font-size: 11px;
@@ -289,23 +304,22 @@ body {
 .profile-detail-item {
     margin-bottom: 5px;
     font-size: 14px;
-    color: #555;
+    color: var(--text-light);
 }
 
 .profile-detail-item.highlight {
     font-weight: bold;
-    color: #333;
+    color: var(--text-dark);
 }
 
 .profile-detail-item.small {
     font-size: 13px;
-    color: #777;
+    color: var(--text-light);
 }
 
 /* Mobile App Card */
 .mobile-app-card {
-    background-color: #17a2b8;
-    /* Teal color */
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     display: flex;
     align-items: center;
@@ -334,13 +348,13 @@ body {
 
 .activate-btn:hover {
     background: white;
-    color: #17a2b8;
+    color: var(--primary-color);
 }
 
 /* Notification Panel */
 .notification-panel {
-    background: white;
-    border-radius: 4px;
+    background: var(--surface-color);
+    border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     margin-top: 0;
     height: 100%;
@@ -348,12 +362,12 @@ body {
 
 .panel-header {
     padding: 15px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .panel-header h3 {
     font-size: 16px;
-    color: #555;
+    color: var(--text-dark);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -361,7 +375,7 @@ body {
 
 .notification-tabs {
     display: flex;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     padding: 0 15px;
 }
 
@@ -370,14 +384,14 @@ body {
     border: none;
     padding: 15px 20px;
     font-size: 14px;
-    color: #777;
+    color: var(--text-light);
     cursor: pointer;
     border-bottom: 2px solid transparent;
 }
 
 .tab-btn.active {
-    color: #007bff;
-    border-bottom-color: #007bff;
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
     font-weight: 500;
 }
 
@@ -389,16 +403,16 @@ body {
     display: flex;
     align-items: center;
     padding: 15px 20px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f1f5f9;
     transition: background 0.2s;
 }
 
 .notification-item:hover {
-    background-color: #f8f9fa;
+    background-color: var(--bg-light);
 }
 
 .notif-icon-box {
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
     width: 30px;
     height: 30px;
@@ -416,23 +430,23 @@ body {
 
 .notif-title {
     font-size: 14px;
-    color: #007bff;
+    color: var(--primary-color);
     margin-bottom: 0;
 }
 
 .notif-date {
     font-size: 12px;
-    color: #999;
+    color: var(--text-light);
 }
 
 .no-record {
     padding: 20px;
     text-align: center;
-    color: #777;
-    background-color: #f8d7da;
+    color: var(--text-light);
+    background-color: var(--accent-light);
     margin: 15px;
     border-radius: 4px;
-    color: #721c24;
+    color: var(--primary-dark);
 }
 
 /* Responsive Design */
@@ -452,7 +466,7 @@ body {
         top: 60px;
         left: 0;
         width: 100%;
-        background-color: #343a40;
+        background-color: var(--primary-dark);
         padding: 10px 0;
     }
 
@@ -467,7 +481,7 @@ body {
     .dropdown-menu {
         position: static;
         box-shadow: none;
-        background-color: #2c3237;
+        background-color: #ffffff;
         padding-left: 20px;
     }
 }

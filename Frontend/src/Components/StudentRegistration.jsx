@@ -176,7 +176,7 @@ const StudentRegistration = () => {
 
                             {/* Full Name */}
                             <div className="portal-form-group">
-                                <label><i className="fas fa-user" style={{ marginRight: "6px", color: "#667eea" }}></i> Full Name <span style={{ color: "#e53e3e" }}>*</span></label>
+                                <label><i className="fas fa-user" style={{ marginRight: "6px", color: "var(--primary-color)" }}></i> Full Name <span style={{ color: "var(--accent-color)" }}>*</span></label>
                                 <input
                                     type="text"
                                     className="portal-form-input"
@@ -189,7 +189,7 @@ const StudentRegistration = () => {
 
                             {/* Email Address */}
                             <div className="portal-form-group">
-                                <label><i className="fas fa-envelope" style={{ marginRight: "6px", color: "#667eea" }}></i> Email Address <span style={{ color: "#e53e3e" }}>*</span></label>
+                                <label><i className="fas fa-envelope" style={{ marginRight: "6px", color: "var(--primary-color)" }}></i> Email Address <span style={{ color: "var(--accent-color)" }}>*</span></label>
                                 <input
                                     type="email"
                                     className="portal-form-input"
@@ -202,7 +202,7 @@ const StudentRegistration = () => {
 
                             {/* Standard / Class */}
                             <div className="portal-form-group">
-                                <label><i className="fas fa-graduation-cap" style={{ marginRight: "6px", color: "#667eea" }}></i> Class / Standard <span style={{ color: "#e53e3e" }}>*</span></label>
+                                <label><i className="fas fa-graduation-cap" style={{ marginRight: "6px", color: "var(--primary-color)" }}></i> Class / Standard <span style={{ color: "var(--accent-color)" }}>*</span></label>
                                 <select
                                     className="portal-form-input"
                                     value={selectedStandard}
@@ -221,7 +221,7 @@ const StudentRegistration = () => {
 
                             {/* Batch */}
                             <div className="portal-form-group">
-                                <label><i className="fas fa-users" style={{ marginRight: "6px", color: "#667eea" }}></i> Batch <span style={{ color: "#e53e3e" }}>*</span></label>
+                                <label><i className="fas fa-users" style={{ marginRight: "6px", color: "var(--primary-color)" }}></i> Batch <span style={{ color: "var(--accent-color)" }}>*</span></label>
                                 <select
                                     className="portal-form-input"
                                     value={selectedBatch}
@@ -238,7 +238,7 @@ const StudentRegistration = () => {
 
                             {/* Temporary Password */}
                             <div className="portal-form-group">
-                                <label><i className="fas fa-lock" style={{ marginRight: "6px", color: "#667eea" }}></i> Temporary Password <span style={{ color: "#e53e3e" }}>*</span></label>
+                                <label><i className="fas fa-lock" style={{ marginRight: "6px", color: "var(--primary-color)" }}></i> Temporary Password <span style={{ color: "var(--accent-color)" }}>*</span></label>
                                 <input
                                     type="password"
                                     className="portal-form-input"

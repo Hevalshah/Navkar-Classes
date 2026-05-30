@@ -197,7 +197,7 @@ const Feedback = () => {
                                     feedbackLogs.map(log => (
                                         <div key={log.id} style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "15px" }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                                <strong style={{ fontSize: "14px", color: "#007bff" }}>{log.category}</strong>
+                                                <strong style={{ fontSize: "14px", color: "var(--primary-color)" }}>{log.category}</strong>
                                                 <span style={{ fontSize: "11px", color: "#718096" }}>{log.date}</span>
                                             </div>
                                             

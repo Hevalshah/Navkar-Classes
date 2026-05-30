@@ -73,7 +73,7 @@ const StudentTests = ({ user, handleLogout }) => {
                                         </div>
                                         <div className="test-meta-info">
                                             <span><i className="far fa-check-square"></i> Max Marks: <strong>{test.total_marks} Marks</strong></span>
-                                            <span style={{ color: "#e74c3c" }}><i className="far fa-calendar-times"></i> Test Date: <strong>{new Date(test.test_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></span>
+                                            <span style={{ color: "var(--accent-color)" }}><i className="far fa-calendar-times"></i> Test Date: <strong>{new Date(test.test_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></span>
                                         </div>
                                         <div className="test-footer">
                                             <span style={{ fontSize: "11px", color: "#718096" }}>Status: {test.submissionStatus}</span>
@@ -132,7 +132,7 @@ const StudentTests = ({ user, handleLogout }) => {
 };
 
 // --- STAFF TESTS COMPONENT ---
-const StaffTests = ({ user, handleLogout }) => {
+const StaffTests = ({ user, handleLogout, role }) => {
     const [activeTab, setActiveTab] = useState("tests"); // tests, submissions
     const [showModal, setShowModal] = useState(false);
     const [testList, setTestList] = useState([]);
@@ -290,7 +290,7 @@ const StaffTests = ({ user, handleLogout }) => {
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="staff" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
             <div className="dashboard-main-container">
                 <div className="page-container">
                     <div className="page-header">
@@ -549,8 +549,8 @@ const Tests = () => {
 
     if (loading) return null;
 
-    if (role === "staff" || role === "admin") {
-        return <StaffTests user={user} handleLogout={handleLogout} />;
+    if (role === "staff" || role === "admin" || role === "teacher") {
+        return <StaffTests user={user} handleLogout={handleLogout} role={role} />;
     }
 
     return <StudentTests user={user} handleLogout={handleLogout} />;

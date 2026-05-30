@@ -38,14 +38,20 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                 {/* Navigation Menu */}
                 <ul className={`nav-menu ${mobileMenuOpen ? "active" : ""}`}>
                     <li className="nav-item">
-                        <Link to={role === "admin" || role === "staff" ? "/admin-dashboard" : "/dashboard"} className="nav-link">Dashboard</Link>
+                        <Link to={role === "admin" || role === "staff" ? "/admin-dashboard" : role === "teacher" ? "/teacher-dashboard" : "/dashboard"} className="nav-link">Dashboard</Link>
                     </li>
 
                     {role === "staff" || role === "admin" ? (
                         <>
                             <li className="nav-item">
-                                <Link to="/timetable" className="nav-link">Timetable</Link>
+                                <Link to="/teacher-registration" className="nav-link">Teacher Registration</Link>
                             </li>
+                            <li className="nav-item">
+                                <Link to="/student-registration" className="nav-link">Student Registration</Link>
+                            </li>
+                        </>
+                    ) : role === "teacher" ? (
+                        <>
                             <li className="nav-item">
                                 <Link to="/attendance" className="nav-link">Attendance</Link>
                             </li>
@@ -59,7 +65,7 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                                 <Link to="/fee-history" className="nav-link">Fee Management</Link>
                             </li>
                             <li className="nav-item">
-                                <Link to="/student-registration" className="nav-link">Student Registration</Link>
+                                <Link to="/timetable" className="nav-link">Timetable</Link>
                             </li>
                             <li className="nav-item">
                                 <Link to="/students" className="nav-link">Manage Students</Link>

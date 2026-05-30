@@ -1,8 +1,7 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Landing from "./Components/Landing";
 import Login from "./Components/Login";
-import Register from "./Components/Register";
 import StudentDashboard from "./Components/StudentDashboard";
 import AdminDashboard from "./Components/AdminDashboard";
 
@@ -20,6 +19,8 @@ import MyProfile from "./Components/MyProfile";
 import ChangePassword from "./Components/ChangePassword";
 import StudentRegistration from "./Components/StudentRegistration";
 import StudentManagement from "./Components/StudentManagement";
+import TeacherRegistration from "./Components/TeacherRegistration";
+import TeacherDashboard from "./Components/TeacherDashboard";
 
 function App() {
   return (
@@ -28,9 +29,11 @@ function App() {
         {/* Core Auth & Dashboard Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<StudentDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+        <Route path="/teacher-registration" element={<TeacherRegistration />} />
 
         {/* Timetable Dropdown */}
         <Route path="/timetable" element={<Timetable />} />

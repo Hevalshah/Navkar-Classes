@@ -8,6 +8,7 @@ import "../Styles/pages.css";
 const ChangePassword = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
+    const [role, setRole] = useState("student");
     const [isUpdating, setIsUpdating] = useState(false);
 
     // Form inputs
@@ -29,16 +30,19 @@ const ChangePassword = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             const token = localStorage.getItem("token");
+            const storedRole = localStorage.getItem("role") || "student";
+            setRole(storedRole);
             if (!token) {
-                setUser(fallbackUser);
+                setUser({ ...fallbackUser, role: storedRole });
                 return;
             }
             try {
                 const userData = await getProfile(token);
                 setUser(userData);
+                if (userData.role) setRole(userData.role);
             } catch (error) {
                 console.warn("Failed to load profile from API, falling back to mock user", error);
-                setUser(fallbackUser);
+                setUser({ ...fallbackUser, role: storedRole });
             }
         };
         fetchProfile();
@@ -99,14 +103,14 @@ const ChangePassword = () => {
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="student" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
 
             <div className="dashboard-main-container">
                 <div className="centered-box-wrapper">
                     
                     <div className="portal-card security-box dark-theme">
                         <div style={{ textAlign: "center", marginBottom: "20px" }}>
-                            <div style={{ width: "55px", height: "55px", borderRadius: "50%", background: "#fee2e2", color: "#e74c3c", display: "flex", alignItems: "center", justify: "center", fontSize: "24px", margin: "0 auto 12px auto" }}>
+                            <div style={{ width: "55px", height: "55px", borderRadius: "50%", background: "var(--primary-light)", color: "var(--primary-color)", display: "flex", alignItems: "center", justify: "center", fontSize: "24px", margin: "0 auto 12px auto" }}>
                                 <i className="fas fa-key"></i>
                             </div>
                             <h3 style={{ margin: "0 0 5px 0", color: "#2d3748", fontSize: "18px", fontWeight: "600" }}>Change Security Password</h3>

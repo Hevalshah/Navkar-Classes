@@ -25,7 +25,18 @@ const StudentManagement = () => {
     const [selectedBatch, setSelectedBatch] = useState("");
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 });
+    const [studentToEdit, setStudentToEdit] = useState(null);
     const [studentToRemove, setStudentToRemove] = useState(null);
+    const [editForm, setEditForm] = useState({
+        name: "",
+        email: "",
+        mobile: "",
+        parentName: "",
+        address: "",
+        standardId: "",
+        batchId: "",
+        isActive: true
+    });
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
@@ -33,7 +44,7 @@ const StudentManagement = () => {
         const loadProfile = async () => {
             const storedRole = localStorage.getItem("role") || "student";
             setRole(storedRole);
-            if (!token || (storedRole !== "staff" && storedRole !== "admin")) {
+            if (!token || (storedRole !== "staff" && storedRole !== "admin" && storedRole !== "teacher")) {
                 navigate("/dashboard");
                 return;
             }
@@ -99,6 +110,10 @@ const StudentManagement = () => {
         batches.filter((batch) => !selectedStandard || batch.standard_id === parseInt(selectedStandard))
     ), [batches, selectedStandard]);
 
+    const editBatches = useMemo(() => (
+        batches.filter((batch) => !editForm.standardId || batch.standard_id === parseInt(editForm.standardId))
+    ), [batches, editForm.standardId]);
+
     const handleLogout = async () => {
         try {
             if (token) await logoutUser(token);
@@ -108,6 +123,53 @@ const StudentManagement = () => {
             localStorage.removeItem("token");
             localStorage.removeItem("role");
             navigate("/login");
+        }
+    };
+
+    const openEditModal = (student) => {
+        setStudentToEdit(student);
+        setMessage("");
+        setError("");
+        setEditForm({
+            name: student.name || "",
+            email: student.email || "",
+            mobile: student.mobile || "",
+            parentName: student.parent_name || "",
+            address: student.address || "",
+            standardId: student.standard_id ? String(student.standard_id) : "",
+            batchId: student.batch_id ? String(student.batch_id) : "",
+            isActive: Boolean(student.is_active)
+        });
+    };
+
+    const handleEditChange = (field, value) => {
+        setEditForm((prev) => ({
+            ...prev,
+            [field]: value,
+            ...(field === "standardId" ? { batchId: "" } : {})
+        }));
+    };
+
+    const saveStudent = async (e) => {
+        e.preventDefault();
+        if (!studentToEdit) return;
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/admin/students/${studentToEdit.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(editForm)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            setMessage(`${editForm.name} was updated.`);
+            setStudentToEdit(null);
+            loadStudents();
+        } catch (saveError) {
+            setError(saveError.message || "Could not update student.");
         }
     };
 
@@ -123,6 +185,11 @@ const StudentManagement = () => {
             if (!res.ok) throw new Error(data.message);
             setMessage(`${studentToRemove.name} was removed.`);
             setStudentToRemove(null);
+            setStudents((prev) => prev.filter((student) => student.id !== studentToRemove.id));
+            setPagination((prev) => ({
+                ...prev,
+                total: Math.max((prev.total || 0) - 1, 0)
+            }));
             loadStudents();
         } catch (removeError) {
             setError(removeError.message || "Could not remove student.");
@@ -232,14 +299,22 @@ const StudentManagement = () => {
                                                 </span>
                                             </td>
                                             <td>
-                                                <button
-                                                    className="portal-btn outline-danger"
-                                                    style={{ padding: "5px 10px", fontSize: "12px" }}
-                                                    disabled={!student.is_active}
-                                                    onClick={() => setStudentToRemove(student)}
-                                                >
-                                                    <i className="fas fa-user-slash"></i> Remove
-                                                </button>
+                                                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                                    <button
+                                                        className="portal-btn outline-primary"
+                                                        style={{ padding: "5px 10px", fontSize: "12px" }}
+                                                        onClick={() => openEditModal(student)}
+                                                    >
+                                                        <i className="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button
+                                                        className="portal-btn outline-danger"
+                                                        style={{ padding: "5px 10px", fontSize: "12px" }}
+                                                        onClick={() => setStudentToRemove(student)}
+                                                    >
+                                                        <i className="fas fa-user-slash"></i> Remove
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     )) : (
@@ -262,6 +337,63 @@ const StudentManagement = () => {
                     </div>
                 </div>
             </div>
+
+            {studentToEdit && (
+                <div className="portal-modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
+                    <div className="portal-card" style={{ width: "100%", maxWidth: "680px", background: "#fff" }}>
+                        <h3 style={{ marginTop: 0 }}>Edit Student</h3>
+                        <form onSubmit={saveStudent}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
+                                <div className="portal-form-group">
+                                    <label>Full Name</label>
+                                    <input className="portal-form-input" value={editForm.name} onChange={(e) => handleEditChange("name", e.target.value)} required />
+                                </div>
+                                <div className="portal-form-group">
+                                    <label>Email</label>
+                                    <input type="email" className="portal-form-input" value={editForm.email} onChange={(e) => handleEditChange("email", e.target.value)} required />
+                                </div>
+                                <div className="portal-form-group">
+                                    <label>Mobile</label>
+                                    <input className="portal-form-input" value={editForm.mobile} onChange={(e) => handleEditChange("mobile", e.target.value)} />
+                                </div>
+                                <div className="portal-form-group">
+                                    <label>Parent / Guardian</label>
+                                    <input className="portal-form-input" value={editForm.parentName} onChange={(e) => handleEditChange("parentName", e.target.value)} />
+                                </div>
+                                <div className="portal-form-group">
+                                    <label>Class / Standard</label>
+                                    <select className="portal-form-input" value={editForm.standardId} onChange={(e) => handleEditChange("standardId", e.target.value)}>
+                                        <option value="">No Class</option>
+                                        {standards.map((standard) => <option key={standard.id} value={standard.id}>{standard.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="portal-form-group">
+                                    <label>Batch</label>
+                                    <select className="portal-form-input" value={editForm.batchId} onChange={(e) => handleEditChange("batchId", e.target.value)}>
+                                        <option value="">No Batch</option>
+                                        {editBatches.map((batch) => <option key={batch.id} value={batch.id}>{batch.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="portal-form-group">
+                                    <label>Status</label>
+                                    <select className="portal-form-input" value={editForm.isActive ? "active" : "inactive"} onChange={(e) => handleEditChange("isActive", e.target.value === "active")}>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                <div className="portal-form-group" style={{ gridColumn: "1 / -1" }}>
+                                    <label>Address</label>
+                                    <textarea className="portal-form-input" rows="3" value={editForm.address} onChange={(e) => handleEditChange("address", e.target.value)} />
+                                </div>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+                                <button type="button" className="portal-btn outline-secondary" onClick={() => setStudentToEdit(null)}>Cancel</button>
+                                <button type="submit" className="portal-btn primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {studentToRemove && (
                 <div className="portal-modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>

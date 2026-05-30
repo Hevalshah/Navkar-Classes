@@ -61,7 +61,10 @@ const connectDB = async () => {
       name VARCHAR(100) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       mobile VARCHAR(20) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      password VARCHAR(255) NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'Active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
 
@@ -107,6 +110,20 @@ const connectDB = async () => {
   ];
 
   for (const q of addColumns) {
+    try {
+      await pool.query(q);
+    } catch (err) {}
+  }
+
+  // Migrate columns for teachers if table already existed
+  const addTeacherColumns = [
+    "ALTER TABLE teachers MODIFY COLUMN mobile VARCHAR(20) NULL",
+    "ALTER TABLE teachers ADD COLUMN password VARCHAR(255) NULL",
+    "ALTER TABLE teachers ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'Active'",
+    "ALTER TABLE teachers ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+  ];
+
+  for (const q of addTeacherColumns) {
     try {
       await pool.query(q);
     } catch (err) {}

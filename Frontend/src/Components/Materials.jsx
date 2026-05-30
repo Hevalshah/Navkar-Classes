@@ -238,7 +238,7 @@ const StudentMaterials = ({ user, handleLogout }) => {
 };
 
 // --- STAFF MATERIALS COMPONENT ---
-const StaffMaterials = ({ user, handleLogout }) => {
+const StaffMaterials = ({ user, handleLogout, role }) => {
     const [materials, setMaterials] = useState([]);
     const [subjects, setSubjects] = useState([]);
     const [batches, setBatches] = useState([]);
@@ -419,7 +419,7 @@ const StaffMaterials = ({ user, handleLogout }) => {
 
     const getFileIcon = (type) => {
         switch (type?.toLowerCase()) {
-            case "pdf": return <i className="fas fa-file-pdf" style={{color: '#e74c3c'}}></i>;
+            case "pdf": return <i className="fas fa-file-pdf" style={{color: 'var(--accent-color)'}}></i>;
             case "xls":
             case "xlsx": return <i className="fas fa-file-excel" style={{color: '#2ecc71'}}></i>;
             case "ppt":
@@ -433,7 +433,7 @@ const StaffMaterials = ({ user, handleLogout }) => {
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="staff" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
             <div className="dashboard-main-container">
                 <div className="page-container">
                     <div className="page-header">
@@ -530,7 +530,7 @@ const StaffMaterials = ({ user, handleLogout }) => {
                                     onDragOver={handleDrag}
                                     onDrop={handleDrop}
                                     style={{
-                                        border: `2px dashed ${dragActive ? '#007bff' : '#cbd5e0'}`,
+                                        border: `2px dashed ${dragActive ? 'var(--primary-color)' : '#cbd5e0'}`,
                                         borderRadius: '8px',
                                         padding: '30px',
                                         textAlign: 'center',
@@ -662,8 +662,8 @@ const Materials = () => {
 
     if (loading) return null;
 
-    if (role === "staff" || role === "admin") {
-        return <StaffMaterials user={user} handleLogout={handleLogout} />;
+    if (role === "staff" || role === "admin" || role === "teacher") {
+        return <StaffMaterials user={user} handleLogout={handleLogout} role={role} />;
     }
 
     return <StudentMaterials user={user} handleLogout={handleLogout} />;

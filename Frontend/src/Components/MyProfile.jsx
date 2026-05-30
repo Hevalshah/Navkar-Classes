@@ -430,7 +430,7 @@ const MyProfile = () => {
 
                                     <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
                                         <span style={{ fontSize: "11px", color: "#a0aec0", textTransform: "uppercase", display: "block" }}>Student Roll ID</span>
-                                        <span style={{ fontSize: "15px", fontWeight: "bold", color: "#e74c3c" }}>{sliceId}</span>
+                                        <span style={{ fontSize: "15px", fontWeight: "bold", color: "var(--accent-color)" }}>{sliceId}</span>
                                     </div>
 
                                     <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>

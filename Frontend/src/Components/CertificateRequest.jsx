@@ -187,7 +187,7 @@ const CertificateRequest = () => {
                                             {requestsList.map(req => (
                                                 <tr key={req.id}>
                                                     <td><strong>{req.date}</strong></td>
-                                                    <td style={{ color: "#007bff", fontWeight: "500" }}>{req.type}</td>
+                                                    <td style={{ color: "var(--primary-color)", fontWeight: "500" }}>{req.type}</td>
                                                     <td>{req.purpose}</td>
                                                     <td>{getStatusBadge(req.status)}</td>
                                                     <td style={{ textAlign: "center" }}>

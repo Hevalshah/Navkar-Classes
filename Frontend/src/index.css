@@ -4,7 +4,26 @@
   box-sizing: border-box;
 }
 
+:root {
+  --app-font: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --primary-color: #2c7a7b;
+  --primary-dark: #234e52;
+  --primary-light: #e6fffa;
+  --accent-color: #dd6b20;
+  --accent-light: #fff7ed;
+  --success-color: #2f855a;
+  --danger-color: #c53030;
+  --warning-color: #d69e2e;
+  --info-color: #2b6cb0;
+  --text-dark: #2d3748;
+  --text-light: #718096;
+  --border-color: #e2e8f0;
+  --bg-light: #f7fafc;
+  --surface-color: #ffffff;
+}
+
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f5f5f5;
+  font-family: var(--app-font);
+  background: var(--bg-light);
+  color: var(--text-dark);
 }

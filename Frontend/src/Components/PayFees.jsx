@@ -189,7 +189,7 @@ const PayFees = () => {
                                 <hr style={{ border: "0", borderTop: "1px solid #cbd5e1", margin: "12px 0" }} />
                                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "16px" }}>
                                     <span>Paid Amount:</span>
-                                    <span style={{ color: "#007bff" }}>₹{txnDetails?.amount.toLocaleString()}</span>
+                                    <span style={{ color: "var(--primary-color)" }}>₹{txnDetails?.amount.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -235,7 +235,7 @@ const PayFees = () => {
                                 </div>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
                                     <span style={{ fontWeight: "700", color: "#1a202c" }}>Total Payable Balance</span>
-                                    <span style={{ fontSize: "20px", fontWeight: "bold", color: "#e74c3c" }}>₹{remainingAmount.toLocaleString()}</span>
+                                    <span style={{ fontSize: "20px", fontWeight: "bold", color: "var(--danger-color)" }}>₹{remainingAmount.toLocaleString()}</span>
                                 </div>
                             </div>
 

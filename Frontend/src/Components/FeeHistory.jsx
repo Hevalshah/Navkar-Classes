@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
+
+const asArray = (data, key) => {
+    if (Array.isArray(data)) return data;
+    if (key && Array.isArray(data?.[key])) return data[key];
+    return [];
+};
 
 // --- STUDENT FEE HISTORY COMPONENT ---
 const StudentFeeHistory = ({ user, handleLogout }) => {
@@ -11,18 +17,18 @@ const StudentFeeHistory = ({ user, handleLogout }) => {
     const [paymentHistory, setPaymentHistory] = useState([]);
     const token = localStorage.getItem("token");
 
-    const fetchPaymentHistory = async () => {
+    const fetchPaymentHistory = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/fees", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (res.ok) setPaymentHistory(await res.json());
+            if (res.ok) setPaymentHistory(asArray(await res.json()));
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchPaymentHistory();
-    }, []);
+    }, [fetchPaymentHistory]);
 
     const handleDownloadReceipt = (id, receiptNo) => {
         setDownloadingId(id);
@@ -97,7 +103,7 @@ const StudentFeeHistory = ({ user, handleLogout }) => {
                                             <tr key={pay.id}>
                                                 <td><strong>REC-NC-{pay.id}</strong></td>
                                                 <td>{new Date(pay.paid_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                                <td style={{ fontWeight: "bold", color: pay.status === "Failed" ? "#e74c3c" : "#2d3748" }}>
+                                                <td style={{ fontWeight: "bold", color: pay.status === "Failed" ? "var(--danger-color)" : "var(--text-dark)" }}>
                                                     ₹{parseFloat(pay.amount).toLocaleString()}
                                                 </td>
                                                 <td><span style={{ fontSize: "13px", color: "#718096" }}>{pay.payment_mode}</span></td>
@@ -139,7 +145,7 @@ const StudentFeeHistory = ({ user, handleLogout }) => {
 };
 
 // --- STAFF FEE MANAGEMENT COMPONENT ---
-const StaffFeeManagement = ({ user, handleLogout }) => {
+const StaffFeeManagement = ({ user, handleLogout, role }) => {
     const [selectedBatch, setSelectedBatch] = useState("All");
     const [selectedStatus, setSelectedStatus] = useState("All");
     const [searchTerm, setSearchTerm] = useState("");
@@ -158,30 +164,30 @@ const StaffFeeManagement = ({ user, handleLogout }) => {
 
     const token = localStorage.getItem("token");
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             // Load batches
             const resB = await fetch("http://localhost:5000/api/admin/batches");
-            if (resB.ok) setBatches(await resB.json());
+            if (resB.ok) setBatches(asArray(await resB.json()));
 
             // Load students
             const resS = await fetch("http://localhost:5000/api/admin/students", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (resS.ok) setStudents(await resS.json());
+            if (resS.ok) setStudents(asArray(await resS.json(), "students"));
 
             // Load all fees records
             const resF = await fetch("http://localhost:5000/api/fees", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            if (resF.ok) setPayments(await resF.json());
+            if (resF.ok) setPayments(asArray(await resF.json()));
 
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [loadData]);
 
     const handleRecordPayment = (studentId) => {
         setFormData({
@@ -256,7 +262,7 @@ const StaffFeeManagement = ({ user, handleLogout }) => {
     const filteredStudents = studentsWithFeeInfo.filter(s => {
         const matchBatch = selectedBatch === "All" || s.batch_id === parseInt(selectedBatch);
         const matchStatus = selectedStatus === "All" || s.status === selectedStatus;
-        const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchSearch = (s.name || "").toLowerCase().includes(searchTerm.toLowerCase());
         return matchBatch && matchStatus && matchSearch;
     });
 
@@ -269,7 +275,7 @@ const StaffFeeManagement = ({ user, handleLogout }) => {
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="staff" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
             <div className="dashboard-main-container">
                 <div className="page-container">
                     <div className="page-header">
@@ -347,7 +353,7 @@ const StaffFeeManagement = ({ user, handleLogout }) => {
                                                 <td><span className="portal-badge" style={{backgroundColor: '#e2e8f0', color: '#4a5568'}}>{student.batch_name || "N/A"}</span></td>
                                                 <td>₹{student.totalFees.toLocaleString()}</td>
                                                 <td style={{ color: '#2ecc71', fontWeight: '600' }}>₹{student.paidAmount.toLocaleString()}</td>
-                                                <td style={{ color: student.pendingAmount > 0 ? '#e74c3c' : '#718096', fontWeight: '600' }}>₹{student.pendingAmount.toLocaleString()}</td>
+                                                <td style={{ color: student.pendingAmount > 0 ? 'var(--danger-color)' : 'var(--text-light)', fontWeight: '600' }}>₹{student.pendingAmount.toLocaleString()}</td>
                                                 <td>{student.lastPaymentDate}</td>
                                                 <td>
                                                     <span className={`portal-badge ${student.status === "Paid" ? "success" : student.status === "Partial" ? "warning" : "danger"}`}>
@@ -479,8 +485,8 @@ const FeeHistory = () => {
 
     if (loading) return null;
 
-    if (role === "staff" || role === "admin") {
-        return <StaffFeeManagement user={user} handleLogout={handleLogout} />;
+    if (role === "staff" || role === "admin" || role === "teacher") {
+        return <StaffFeeManagement user={user} handleLogout={handleLogout} role={role} />;
     }
 
     return <StudentFeeHistory user={user} handleLogout={handleLogout} />;

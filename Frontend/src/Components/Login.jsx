@@ -20,12 +20,14 @@ const Login = () => {
     try {
       const data = await loginUser({ email, password, role });
       localStorage.setItem("token", data.token);
-      localStorage.setItem("role", role);
+      localStorage.setItem("role", data.role);
 
-      if (role === "student") {
+      if (data.role === "student") {
         navigate("/dashboard");
-      } else if (role === "admin") {
+      } else if (data.role === "admin" || data.role === "staff") {
         navigate("/admin-dashboard");
+      } else if (data.role === "teacher") {
+        navigate("/teacher-dashboard");
       }
     } catch {
       setMessage("Invalid credentials");
@@ -79,6 +81,16 @@ const Login = () => {
                     onChange={() => setRole("admin")}
                   />
                   Staff
+                </label>
+                <label className="radio-label">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="teacher"
+                    checked={role === "teacher"}
+                    onChange={() => setRole("teacher")}
+                  />
+                  Teacher
                 </label>
                 <label className="radio-label">
                   <input
@@ -147,12 +159,6 @@ const Login = () => {
               <img src={googleLogo} alt="Google" />
               Sign in with Google
             </button>
-
-            {/* Register Link */}
-            <div className="divider" style={{ margin: '15px 0', border: 'none' }}></div>
-            <p style={{ textAlign: 'center', fontSize: '14px', color: '#666' }}>
-              Don't have an account? <span style={{ color: '#2c7a7b', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => navigate("/register")}>Register</span>
-            </p>
 
           </form>
         ) : (

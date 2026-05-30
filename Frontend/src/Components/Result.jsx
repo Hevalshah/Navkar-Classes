@@ -191,7 +191,7 @@ const Result = () => {
                         <div style={{ display: "flex", alignItems: "center", borderBottom: "2px solid #343a40", paddingBottom: "15px", marginBottom: "20px" }}>
                             <img src={logo} alt="Navkar Logo" style={{ height: "55px", marginRight: "20px", background: "#f8fafc", padding: "4px", borderRadius: "4px", border: "1px solid #cbd5e1" }} />
                             <div style={{ flex: "1" }}>
-                                <h3 style={{ margin: "0 0 4px 0", color: "#e74c3c", fontSize: "20px", textTransform: "uppercase", fontWeight: "700" }}>Navkar Classes</h3>
+                                <h3 style={{ margin: "0 0 4px 0", color: "var(--primary-color)", fontSize: "20px", textTransform: "uppercase", fontWeight: "700" }}>Navkar Classes</h3>
                                 <p style={{ margin: "0", fontSize: "12px", color: "#4a5568", fontWeight: "500" }}>Academic Transcript & Progress Report</p>
                             </div>
                             <div style={{ textAlign: "right" }}>
@@ -255,7 +255,7 @@ const Result = () => {
                                     <tr style={{ background: "#f8fafc", fontWeight: "bold", borderTop: "2px solid #cbd5e1" }}>
                                         <td colSpan="2" style={{ textAlign: "right" }}>GRAND TOTAL:</td>
                                         <td>{totalMax}</td>
-                                        <td style={{ color: "#007bff", fontSize: "16px" }}>{totalObtained}</td>
+                                        <td style={{ color: "var(--primary-color)", fontSize: "16px" }}>{totalObtained}</td>
                                         <td colSpan="2">
                                             Percentage: <span style={{ color: "#2ecc71" }}>{overallPercentage}%</span>
                                         </td>

@@ -5,10 +5,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 // Helper to check if role can manage attendance
 const isStaffUser = (req, res, next) => {
-  if (req.user && (req.user.role === "staff" || req.user.role === "admin")) {
+  if (req.user && (req.user.role === "staff" || req.user.role === "admin" || req.user.role === "teacher")) {
     next();
   } else {
-    res.status(403).json({ message: "Access denied. Staff only." });
+    res.status(403).json({ message: "Access denied. Authorized roles only." });
   }
 };
 

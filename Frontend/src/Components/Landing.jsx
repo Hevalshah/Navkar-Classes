@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/navkar-logo.png";
 import classroom from "../assets/classroom.jpg";
+import saurabh from "../assets/saurabh.jpeg";
+import kaksha from "../assets/kaksha.jpeg";
 import "../Styles/landing.css";
 
 const Landing = () => {
@@ -69,11 +71,11 @@ const Landing = () => {
                         </p>
                         <div className="about-stats">
                             <div className="stat-card">
-                                <h4>15+</h4>
+                                <h4>13+</h4>
                                 <p>Years Experience</p>
                             </div>
                             <div className="stat-card">
-                                <h4>10k+</h4>
+                                <h4>1k+</h4>
                                 <p>Students Mentored</p>
                             </div>
                             <div className="stat-card">
@@ -148,29 +150,27 @@ const Landing = () => {
                 <div className="faculty-grid">
                     <div className="faculty-card">
                         <div className="faculty-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=256&auto=format&fit=crop" alt="Faculty member" />
+                            <img
+                                src={saurabh}
+                                alt="Saurabh Shah"
+                                style={{ "--faculty-focus-y": "10%" }}
+                            />
                         </div>
-                        <h3>Prof. R. C. Shah</h3>
-                        <span>Mathematics</span>
-                        <p>Over 18 years of teaching expertise in algebra, geometry, and mental math analytics.</p>
-                    </div>
-
-                    <div className="faculty-card">
-                        <div className="faculty-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=256&auto=format&fit=crop" alt="Faculty member" />
-                        </div>
-                        <h3>Prof. N. K. Vyas</h3>
-                        <span>Science & Technology</span>
+                        <h3>Saurabh Shah</h3>
+                        <span>B.Com</span>
                         <p>Renowned educator mentoring students on physics, chemistry, and biological systems.</p>
                     </div>
-
                     <div className="faculty-card">
                         <div className="faculty-img-wrapper">
-                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=256&auto=format&fit=crop" alt="Faculty member" />
+                            <img
+                                src={kaksha}
+                                alt="Kaksha Shah"
+                                style={{ "--faculty-focus-y": "27%" }}
+                            />
                         </div>
-                        <h3>Prof. Harish Mehta</h3>
-                        <span>Accountancy & Commerce</span>
-                        <p>Specialist teacher bringing real-world business insights directly to commerce classrooms.</p>
+                        <h3>Kaksha Shah</h3>
+                        <span>B.Sc</span>
+                        <p>Over 15 years of experience in teaching subjects to class 5th to 12th.</p>
                     </div>
                 </div>
             </section>
@@ -225,7 +225,7 @@ const Landing = () => {
                 <div className="contact-container">
                     <div className="contact-info-section">
                         <h3>Navkar Classes Office</h3>
-                        <p>We are located in the heart of Ahmedabad, easily accessible by public transit. Feel free to call us or stop by.</p>
+                        <p>We are located in GIDC colony, Vadodara. Feel free to call us or stop by.</p>
                         <div className="contact-methods">
                             <div className="contact-method-item">
                                 <div className="contact-method-icon">
@@ -233,7 +233,7 @@ const Landing = () => {
                                 </div>
                                 <div className="contact-method-text">
                                     <h4>Our Address</h4>
-                                    <p>123, Navkar Heights, Near Stadium Road, Ahmedabad, Gujarat - 380009</p>
+                                    <p>B-1/10 GIDC Colony,OPP. ESI Hospital, Near Vegetable Market, Manjalpur Road, Vadodara, Gujarat - 390011</p>
                                 </div>
                             </div>
 
@@ -243,7 +243,7 @@ const Landing = () => {
                                 </div>
                                 <div className="contact-method-text">
                                     <h4>Phone Number</h4>
-                                    <p>+91 79 98765 43210 / +91 88888 88888</p>
+                                    <p>+91 8735810902 / +91 8000222004</p>
                                 </div>
                             </div>
 

@@ -48,10 +48,12 @@ const seedDatabase = async () => {
     const subAccId = subAccResult.insertId;
     const subEcoId = subEcoResult.insertId;
 
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
     console.log("Seeding Teachers...");
-    const [t1Result] = await pool.query("INSERT INTO teachers (name, email, mobile) VALUES ('Prof. R. C. Shah', 'rcshah@navkar.com', '9876543210')");
-    const [t2Result] = await pool.query("INSERT INTO teachers (name, email, mobile) VALUES ('Prof. N. K. Vyas', 'nkvyas@navkar.com', '9876543211')");
-    const [t3Result] = await pool.query("INSERT INTO teachers (name, email, mobile) VALUES ('Prof. Harish Mehta', 'hmehta@navkar.com', '9876543212')");
+    const [t1Result] = await pool.query("INSERT INTO teachers (name, email, mobile, password, status) VALUES ('Prof. R. C. Shah', 'rcshah@navkar.com', '9876543210', ?, 'Active')", [hashedPassword]);
+    const [t2Result] = await pool.query("INSERT INTO teachers (name, email, mobile, password, status) VALUES ('Prof. N. K. Vyas', 'nkvyas@navkar.com', '9876543211', ?, 'Active')", [hashedPassword]);
+    const [t3Result] = await pool.query("INSERT INTO teachers (name, email, mobile, password, status) VALUES ('Prof. Harish Mehta', 'hmehta@navkar.com', '9876543212', ?, 'Active')", [hashedPassword]);
 
     const t1Id = t1Result.insertId;
     const t2Id = t2Result.insertId;
@@ -76,7 +78,6 @@ const seedDatabase = async () => {
     );
 
     console.log("Seeding Users...");
-    const hashedPassword = await bcrypt.hash("password123", 10);
 
     const users = [
       {

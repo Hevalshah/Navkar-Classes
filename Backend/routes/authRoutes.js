@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Teacher = require("../models/Teacher");
 const authMiddleware = require("../middleware/authMiddleware");
 const { pool } = require("../config/db");
 
@@ -76,16 +77,21 @@ router.post("/register-student", authMiddleware, isStaffUser, async (req, res) =
       return res.status(400).json({ message: "Selected batch does not belong to the selected class" });
     }
 
-    // Validation for duplicate email
+    // Validation for duplicate email. If the same student was removed earlier,
+    // clear the inactive login row so the email can be enrolled again.
     const existingEmailUser = await User.findByEmail(email);
-    if (existingEmailUser) {
+    if (existingEmailUser?.role === "student" && !existingEmailUser.isActive) {
+      await pool.execute("DELETE FROM users WHERE id = ? AND role = 'student'", [existingEmailUser.id]);
+    } else if (existingEmailUser) {
       return res.status(400).json({ message: "Email is already registered" });
     }
 
     // Validation for duplicate username (if provided)
     if (username) {
       const existingUsernameUser = await User.findByUsername(username);
-      if (existingUsernameUser) {
+      if (existingUsernameUser?.role === "student" && !existingUsernameUser.isActive) {
+        await pool.execute("DELETE FROM users WHERE id = ? AND role = 'student'", [existingUsernameUser.id]);
+      } else if (existingUsernameUser) {
         return res.status(400).json({ message: "Username is already taken" });
       }
     }
@@ -172,13 +178,20 @@ router.get("/me", async (req, res) => {
 
     const token = authHeader.replace("Bearer ", "");
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findActiveById(decoded.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    
+    if (decoded.role === "teacher") {
+      const teacher = await Teacher.findById(decoded.id);
+      if (!teacher) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(Teacher.publicTeacher(teacher));
+    } else {
+      const user = await User.findActiveById(decoded.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(User.publicUser(user));
     }
-
-    res.json(User.publicUser(user));
   } catch (error) {
     res.status(401).json({ message: "Please authenticate" });
   }
@@ -191,7 +204,16 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
-    const user = await User.findByEmailAndRole(email, role);
+    let user;
+    if (role === "teacher") {
+      user = await Teacher.findByEmail(email);
+      if (!user || user.status !== "Active") {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+    } else {
+      user = await User.findByEmailAndRole(email, role);
+    }
+
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -202,14 +224,16 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: user.role || "teacher" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    await User.updateLastLogin(user.id);
+    if (role !== "teacher") {
+      await User.updateLastLogin(user.id);
+    }
 
-    res.json({ token, role: user.role });
+    res.json({ token, role: user.role || "teacher" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

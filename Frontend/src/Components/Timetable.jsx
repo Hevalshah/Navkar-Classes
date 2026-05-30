@@ -65,7 +65,7 @@ const StudentTimetable = ({ user, handleLogout }) => {
                                         {filteredLectures.map(lec => (
                                             <tr key={lec.id}>
                                                 <td><strong>{lec.day}</strong></td>
-                                                <td style={{ color: "#007bff", fontWeight: "500" }}>{lec.subject_name}</td>
+                                                <td style={{ color: "var(--primary-color)", fontWeight: "500" }}>{lec.subject_name}</td>
                                                 <td>{lec.teacher_name}</td>
                                                 <td><i className="far fa-clock" style={{ marginRight: "6px", color: "#718096" }}></i>{lec.time_slot}</td>
                                                 <td><span className="portal-badge info">{lec.room}</span></td>
@@ -90,7 +90,7 @@ const StudentTimetable = ({ user, handleLogout }) => {
 };
 
 // --- STAFF TIMETABLE COMPONENT ---
-const StaffTimetable = ({ user, handleLogout }) => {
+const StaffTimetable = ({ user, handleLogout, role }) => {
     const [selectedStandard, setSelectedStandard] = useState("All");
     const [selectedBatch, setSelectedBatch] = useState("All");
     const [selectedDay, setSelectedDay] = useState("All");
@@ -223,7 +223,7 @@ const StaffTimetable = ({ user, handleLogout }) => {
 
     return (
         <div className="dashboard-layout">
-            <Navbar role="staff" user={user} onLogout={handleLogout} />
+            <Navbar role={role} user={user} onLogout={handleLogout} />
             <div className="dashboard-main-container">
                 <div className="page-container">
                     <div className="page-header">
@@ -280,7 +280,7 @@ const StaffTimetable = ({ user, handleLogout }) => {
                                                 <td>{s.standard_name}</td>
                                                 <td><span className="portal-badge" style={{backgroundColor: '#e2e8f0', color: '#4a5568'}}>{s.batch_name}</span></td>
                                                 <td><strong>{s.day}</strong></td>
-                                                <td style={{ color: "#007bff", fontWeight: "500" }}>{s.subject_name}</td>
+                                                <td style={{ color: "var(--primary-color)", fontWeight: "500" }}>{s.subject_name}</td>
                                                 <td>{s.teacher_name}</td>
                                                 <td><i className="far fa-clock" style={{ marginRight: "6px", color: "#718096" }}></i>{s.time_slot}</td>
                                                 <td><span className="portal-badge info">{s.room}</span></td>
@@ -436,8 +436,8 @@ const Timetable = () => {
 
     if (loading) return null;
 
-    if (role === "staff" || role === "admin") {
-        return <StaffTimetable user={user} handleLogout={handleLogout} />;
+    if (role === "staff" || role === "admin" || role === "teacher") {
+        return <StaffTimetable user={user} handleLogout={handleLogout} role={role} />;
     }
 
     return <StudentTimetable user={user} handleLogout={handleLogout} />;

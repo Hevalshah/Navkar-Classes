@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcryptjs");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const Teacher = require("../models/Teacher");
 
 // Helper to ensure role is admin
 const isAdmin = (req, res, next) => {
@@ -18,6 +20,15 @@ const isStaffUser = (req, res, next) => {
   }
   res.status(403).json({ message: "Access denied. Staff only." });
 };
+
+const isAcademicUser = (req, res, next) => {
+  if (req.user && (req.user.role === "staff" || req.user.role === "admin" || req.user.role === "teacher")) {
+    return next();
+  }
+  res.status(403).json({ message: "Access denied. Authorized roles only." });
+};
+
+const isStudentManager = isAcademicUser;
 
 // ===============================
 // STANDARDS CRUD
@@ -161,40 +172,65 @@ router.delete("/subjects/:id", authMiddleware, isAdmin, async (req, res) => {
 // ===============================
 // TEACHERS CRUD
 // ===============================
-router.get("/teachers", async (req, res) => {
+router.get("/teachers", authMiddleware, isAcademicUser, async (req, res) => {
   try {
-    const [rows] = await pool.execute("SELECT * FROM teachers ORDER BY id DESC");
-    res.json(rows);
+    const rows = await Teacher.findAll();
+    res.json(rows.map(Teacher.publicTeacher));
   } catch (err) {
     res.status(500).json({ message: "Error fetching teachers", error: err.message });
   }
 });
 
-router.post("/teachers", authMiddleware, isAdmin, async (req, res) => {
-  const { name, email, mobile } = req.body;
-  if (!name || !email || !mobile) return res.status(400).json({ message: "Name, email and mobile are required" });
+router.post("/teachers", authMiddleware, isStaffUser, async (req, res) => {
+  const { name, email, mobile, password, status } = req.body;
+  if (!name || !email || !mobile || !password) {
+    return res.status(400).json({ message: "Name, email, mobile, and password are required" });
+  }
   try {
-    const [result] = await pool.execute("INSERT INTO teachers (name, email, mobile) VALUES (?, ?, ?)", [name, email, mobile]);
-    res.status(201).json({ id: result.insertId, name, email, mobile });
+    const existing = await Teacher.findByEmail(email);
+    if (existing) {
+      return res.status(400).json({ message: "Teacher with this email already registered" });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newTeacher = await Teacher.create({
+      name,
+      email,
+      mobile,
+      password: hashedPassword,
+      status: status || "Active"
+    });
+    res.status(201).json(Teacher.publicTeacher(newTeacher));
   } catch (err) {
     res.status(500).json({ message: "Error creating teacher", error: err.message });
   }
 });
 
-router.put("/teachers/:id", authMiddleware, isAdmin, async (req, res) => {
-  const { name, email, mobile } = req.body;
-  if (!name || !email || !mobile) return res.status(400).json({ message: "Name, email and mobile are required" });
+router.put("/teachers/:id", authMiddleware, isStaffUser, async (req, res) => {
+  const { name, email, mobile, password, status } = req.body;
+  if (!name || !email || !mobile || !status) {
+    return res.status(400).json({ message: "Name, email, mobile, and status are required" });
+  }
   try {
-    await pool.execute("UPDATE teachers SET name = ?, email = ?, mobile = ? WHERE id = ?", [name, email, mobile, req.params.id]);
-    res.json({ id: req.params.id, name, email, mobile });
+    const existing = await Teacher.findByEmail(email);
+    if (existing && existing.id !== parseInt(req.params.id)) {
+      return res.status(400).json({ message: "Email is already registered by another teacher" });
+    }
+    let updatedData = { name, email, mobile, status };
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updatedData.password = await bcrypt.hash(password, salt);
+    }
+    const updatedTeacher = await Teacher.update(parseInt(req.params.id), updatedData);
+    res.json(Teacher.publicTeacher(updatedTeacher));
   } catch (err) {
     res.status(500).json({ message: "Error updating teacher", error: err.message });
   }
 });
 
-router.delete("/teachers/:id", authMiddleware, isAdmin, async (req, res) => {
+router.delete("/teachers/:id", authMiddleware, isStaffUser, async (req, res) => {
   try {
-    await pool.execute("DELETE FROM teachers WHERE id = ?", [req.params.id]);
+    await Teacher.remove(parseInt(req.params.id));
     res.json({ message: "Teacher deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Error deleting teacher", error: err.message });
@@ -204,14 +240,20 @@ router.delete("/teachers/:id", authMiddleware, isAdmin, async (req, res) => {
 // ===============================
 // FETCH REGISTERED STUDENTS (For lists/attendance)
 // ===============================
-router.get("/students", authMiddleware, isStaffUser, async (req, res) => {
+router.get("/students", authMiddleware, isAcademicUser, async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
     const offset = (page - 1) * limit;
     const search = (req.query.search || "").trim();
+    const includeInactive = req.query.includeInactive === "true";
     const filters = ["u.role = 'student'"];
     const params = [];
+
+    if (!includeInactive) {
+      filters.push("u.is_active = TRUE");
+      filters.push("st.is_active = TRUE");
+    }
 
     if (req.query.standardId) {
       filters.push("st.standard_id = ?");
@@ -264,23 +306,103 @@ router.get("/students", authMiddleware, isStaffUser, async (req, res) => {
   }
 });
 
-router.delete("/students/:id", authMiddleware, isStaffUser, async (req, res) => {
+router.put("/students/:id", authMiddleware, isStudentManager, async (req, res) => {
+  const { name, email, mobile, parentName, address, standardId, batchId, isActive } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({ message: "Student name and email are required" });
+  }
+
+  const normalizedStandardId = standardId ? parseInt(standardId, 10) : null;
+  const normalizedBatchId = batchId ? parseInt(batchId, 10) : null;
+  const normalizedIsActive = isActive === undefined ? true : Boolean(isActive);
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [studentRows] = await connection.execute(
+      `SELECT st.id AS student_id, u.id AS user_id
+       FROM students st
+       JOIN users u ON st.user_id = u.id
+       WHERE u.id = ? AND u.role = 'student'
+       LIMIT 1`,
+      [req.params.id]
+    );
+
+    if (studentRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const [emailRows] = await connection.execute(
+      "SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1",
+      [email, req.params.id]
+    );
+    if (emailRows.length > 0) {
+      await connection.rollback();
+      return res.status(400).json({ message: "Email is already registered by another user" });
+    }
+
+    if (normalizedBatchId) {
+      const [batchRows] = await connection.execute(
+        "SELECT id FROM batches WHERE id = ? AND (? IS NULL OR standard_id = ?) LIMIT 1",
+        [normalizedBatchId, normalizedStandardId, normalizedStandardId]
+      );
+      if (batchRows.length === 0) {
+        await connection.rollback();
+        return res.status(400).json({ message: "Selected batch does not belong to the selected class" });
+      }
+    }
+
+    await connection.execute(
+      `UPDATE users
+       SET name = ?, email = ?, is_active = ?
+       WHERE id = ? AND role = 'student'`,
+      [name, email, normalizedIsActive, req.params.id]
+    );
+
+    await connection.execute(
+      `UPDATE students
+       SET name = ?, mobile = ?, parent_name = ?, address = ?,
+           standard_id = ?, batch_id = ?, is_active = ?
+       WHERE user_id = ?`,
+      [
+        name,
+        mobile || null,
+        parentName || null,
+        address || null,
+        normalizedStandardId,
+        normalizedBatchId,
+        normalizedIsActive,
+        req.params.id
+      ]
+    );
+
+    await connection.commit();
+    res.json({ message: "Student updated successfully" });
+  } catch (err) {
+    await connection.rollback();
+    res.status(500).json({ message: "Error updating student", error: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+router.delete("/students/:id", authMiddleware, isStudentManager, async (req, res) => {
   try {
     const [result] = await pool.execute(
-      `UPDATE students st
-       JOIN users u ON st.user_id = u.id
-       SET st.is_active = FALSE, u.is_active = FALSE
-       WHERE u.id = ? AND u.role = 'student' AND st.is_active = TRUE`,
+      "DELETE FROM users WHERE id = ? AND role = 'student'",
       [req.params.id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Active student not found" });
+      return res.status(404).json({ message: "Student not found" });
     }
 
-    res.json({ message: "Student removed successfully" });
+    res.json({ message: "Student deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error removing student", error: err.message });
+    res.status(500).json({ message: "Error deleting student", error: err.message });
   }
 });
 

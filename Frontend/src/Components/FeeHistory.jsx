@@ -235,9 +235,7 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
         const studentPayments = payments.filter(p => p.student_id === student.id && p.status === "Paid");
         const paidAmount = studentPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
         
-        // Define total fee based on Standard
-        const stdName = (student.standard_name || "").toLowerCase();
-        const totalFees = stdName.includes("11") || stdName.includes("12") || stdName.includes("commerce") ? 50000 : 35000;
+        const totalFees = Number(student.total_fee || 0);
         
         const pendingAmount = Math.max(0, totalFees - paidAmount);
         

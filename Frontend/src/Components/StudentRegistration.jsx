@@ -22,6 +22,7 @@ const StudentRegistration = () => {
     const [email, setEmail] = useState("");
     const [selectedStandard, setSelectedStandard] = useState("");
     const [selectedBatch, setSelectedBatch] = useState("");
+    const [totalFee, setTotalFee] = useState("");
     const [password, setPassword] = useState("");
 
     // Dynamic Standards List
@@ -115,6 +116,7 @@ const StudentRegistration = () => {
             standardId: parseInt(selectedStandard),
             batchId: parseInt(selectedBatch),
             assignedBatch: selectedBatchRecord?.name || "",
+            totalFee: parseFloat(totalFee),
             password
         };
 
@@ -126,6 +128,7 @@ const StudentRegistration = () => {
             setEmail("");
             setSelectedStandard("");
             setSelectedBatch("");
+            setTotalFee("");
             setPassword("");
         } catch (error) {
             setErrorMessage(error.message || "Registration failed. Please check inputs.");
@@ -234,6 +237,21 @@ const StudentRegistration = () => {
                                         <option key={batch.id} value={batch.id}>{batch.name}</option>
                                     ))}
                                 </select>
+                            </div>
+
+                            {/* Total Fee */}
+                            <div className="portal-form-group">
+                                <label><i className="fas fa-rupee-sign" style={{ marginRight: "6px", color: "var(--primary-color)" }}></i> Total Fee To Be Collected <span style={{ color: "var(--accent-color)" }}>*</span></label>
+                                <input
+                                    type="number"
+                                    className="portal-form-input"
+                                    placeholder="Enter total course fee, e.g. 35000"
+                                    value={totalFee}
+                                    onChange={(e) => setTotalFee(e.target.value)}
+                                    min="1"
+                                    step="1"
+                                    required
+                                />
                             </div>
 
                             {/* Temporary Password */}

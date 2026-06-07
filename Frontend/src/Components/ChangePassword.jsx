@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import { getProfile, logoutUser } from "../Services/authService";
+import { changePassword, getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
@@ -70,7 +70,7 @@ const ChangePassword = () => {
     const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
     const isMatching = newPassword && newPassword === confirmPassword;
 
-    const handlePasswordSubmit = (e) => {
+    const handlePasswordSubmit = async (e) => {
         e.preventDefault();
 
         if (!currentPassword) {
@@ -88,17 +88,27 @@ const ChangePassword = () => {
             return;
         }
 
-        setIsUpdating(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login again to update your password.");
+            navigate("/");
+            return;
+        }
 
-        setTimeout(() => {
+        try {
+            setIsUpdating(true);
+            await changePassword(token, { currentPassword, newPassword });
             setIsUpdating(false);
             alert("Your security password has been successfully updated! Please keep your credentials secure.");
-            
+
             // Reset form
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        }, 1500);
+        } catch (error) {
+            setIsUpdating(false);
+            alert(error.message || "Password update failed.");
+        }
     };
 
     return (

@@ -62,6 +62,11 @@ const update = async (id, { name, email, mobile, password, status }) => {
   return findById(id);
 };
 
+const updatePassword = async (id, hashedPassword) => {
+  await pool.execute("UPDATE teachers SET password = ? WHERE id = ?", [hashedPassword, id]);
+  return findById(id);
+};
+
 const remove = async (id) => {
   await pool.execute("DELETE FROM teachers WHERE id = ?", [id]);
 };
@@ -73,6 +78,7 @@ module.exports = {
   findByEmail,
   findById,
   findAll,
+  updatePassword,
   publicTeacher,
   mapTeacher
 };

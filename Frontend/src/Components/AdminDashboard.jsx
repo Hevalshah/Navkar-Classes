@@ -15,7 +15,6 @@ const AdminDashboard = () => {
     const [standards, setStandards] = useState([]);
     const [batches, setBatches] = useState([]);
     const [subjects, setSubjects] = useState([]);
-    const [teachers, setTeachers] = useState([]);
 
     // Alerts
     const [alertMsg, setAlertMsg] = useState("");
@@ -32,9 +31,6 @@ const AdminDashboard = () => {
     const [batchStdId, setBatchStdId] = useState("");
     const [subName, setSubName] = useState("");
     const [subStdId, setSubStdId] = useState("");
-    const [teacherName, setTeacherName] = useState("");
-    const [teacherEmail, setTeacherEmail] = useState("");
-    const [teacherMobile, setTeacherMobile] = useState("");
 
     const token = localStorage.getItem("token");
 
@@ -79,19 +75,11 @@ const AdminDashboard = () => {
         } catch (e) { console.error(e); }
     };
 
-    const loadTeachers = async () => {
-        try {
-            const res = await fetch("http://localhost:5000/api/admin/teachers");
-            if (res.ok) setTeachers(await res.json());
-        } catch (e) { console.error(e); }
-    };
-
     useEffect(() => {
         if (!loading) {
             loadStandards();
             loadBatches();
             loadSubjects();
-            loadTeachers();
         }
     }, [loading]);
 
@@ -123,9 +111,6 @@ const AdminDashboard = () => {
         setBatchStdId("");
         setSubName("");
         setSubStdId("");
-        setTeacherName("");
-        setTeacherEmail("");
-        setTeacherMobile("");
         setShowModal(true);
     };
 
@@ -140,10 +125,6 @@ const AdminDashboard = () => {
         } else if (type === "subject") {
             setSubName(item.name);
             setSubStdId(item.standard_id);
-        } else if (type === "teacher") {
-            setTeacherName(item.name);
-            setTeacherEmail(item.email);
-            setTeacherMobile(item.mobile);
         }
         setShowModal(true);
     };
@@ -167,10 +148,6 @@ const AdminDashboard = () => {
             url = modalMode === "add" ? "http://localhost:5000/api/admin/subjects" : `http://localhost:5000/api/admin/subjects/${editId}`;
             method = modalMode === "add" ? "POST" : "PUT";
             body = { name: subName, standardId: parseInt(subStdId) };
-        } else if (activeTab === "teachers") {
-            url = modalMode === "add" ? "http://localhost:5000/api/admin/teachers" : `http://localhost:5000/api/admin/teachers/${editId}`;
-            method = modalMode === "add" ? "POST" : "PUT";
-            body = { name: teacherName, email: teacherEmail, mobile: teacherMobile };
         }
 
         try {
@@ -190,7 +167,6 @@ const AdminDashboard = () => {
                 if (activeTab === "standards") loadStandards();
                 else if (activeTab === "batches") loadBatches();
                 else if (activeTab === "subjects") loadSubjects();
-                else if (activeTab === "teachers") loadTeachers();
             } else {
                 const errData = await res.json();
                 showAlert(errData.message || "Failed to save record.", "danger");
@@ -213,7 +189,6 @@ const AdminDashboard = () => {
                 if (activeTab === "standards") loadStandards();
                 else if (activeTab === "batches") loadBatches();
                 else if (activeTab === "subjects") loadSubjects();
-                else if (activeTab === "teachers") loadTeachers();
             } else {
                 showAlert("Error deleting record", "danger");
             }
@@ -235,10 +210,10 @@ const AdminDashboard = () => {
                     <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
                             <h2><i className="fas fa-sliders-h"></i> Admin Console</h2>
-                            <span className="subtitle">Configure Coaching Standards, Batches, Subjects, and Faculty</span>
+                            <span className="subtitle">Configure Coaching Standards, Batches, and Subjects</span>
                         </div>
                         <button className="portal-btn primary" onClick={openAddModal}>
-                            <i className="fas fa-plus"></i> Add {activeTab === "standards" ? "Standard" : activeTab === "batches" ? "Batch" : activeTab === "subjects" ? "Subject" : "Teacher"}
+                            <i className="fas fa-plus"></i> Add {activeTab === "standards" ? "Standard" : activeTab === "batches" ? "Batch" : "Subject"}
                         </button>
                     </div>
 
@@ -260,9 +235,6 @@ const AdminDashboard = () => {
                         </button>
                         <button className={`portal-btn ${activeTab === "subjects" ? "primary" : "outline-secondary"}`} onClick={() => setActiveTab("subjects")}>
                             <i className="fas fa-book"></i> Subjects
-                        </button>
-                        <button className={`portal-btn ${activeTab === "teachers" ? "primary" : "outline-secondary"}`} onClick={() => setActiveTab("teachers")}>
-                            <i className="fas fa-chalkboard-teacher"></i> Faculty/Teachers
                         </button>
                     </div>
 
@@ -290,15 +262,6 @@ const AdminDashboard = () => {
                                         <th>ID</th>
                                         <th>Subject Name</th>
                                         <th>Standard / Class</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                )}
-                                {activeTab === "teachers" && (
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Teacher Name</th>
-                                        <th>Email</th>
-                                        <th>Mobile</th>
                                         <th>Actions</th>
                                     </tr>
                                 )}
@@ -348,26 +311,9 @@ const AdminDashboard = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {activeTab === "teachers" && teachers.map((item) => (
-                                    <tr key={item.id}>
-                                        <td>{item.id}</td>
-                                        <td><strong>{item.name}</strong></td>
-                                        <td>{item.email}</td>
-                                        <td>{item.mobile}</td>
-                                        <td>
-                                            <button className="portal-btn outline-primary" style={{ padding: "4px 8px", fontSize: "12px", marginRight: "5px" }} onClick={() => openEditModal("teacher", item)}>
-                                                <i className="fas fa-edit"></i> Edit
-                                            </button>
-                                            <button className="portal-btn outline-danger" style={{ padding: "4px 8px", fontSize: "12px" }} onClick={() => handleDelete(item.id)}>
-                                                <i className="fas fa-trash"></i> Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
                                 {((activeTab === "standards" && standards.length === 0) ||
                                   (activeTab === "batches" && batches.length === 0) ||
-                                  (activeTab === "subjects" && subjects.length === 0) ||
-                                  (activeTab === "teachers" && teachers.length === 0)) && (
+                                  (activeTab === "subjects" && subjects.length === 0)) && (
                                     <tr>
                                         <td colSpan="5" style={{ textAlign: "center", padding: "30px", color: "#a0aec0" }}>
                                             <i className="fas fa-folder-open fa-2x" style={{ marginBottom: "10px", display: "block" }}></i>
@@ -429,23 +375,6 @@ const AdminDashboard = () => {
                                             <option value="">Select standard</option>
                                             {standards.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                         </select>
-                                    </div>
-                                </>
-                            )}
-
-                            {activeTab === "teachers" && (
-                                <>
-                                    <div className="portal-form-group">
-                                        <label>Teacher Name</label>
-                                        <input type="text" className="portal-form-input" required placeholder="Full Name" value={teacherName} onChange={(e) => setTeacherName(e.target.value)} />
-                                    </div>
-                                    <div className="portal-form-group">
-                                        <label>Email Address</label>
-                                        <input type="email" className="portal-form-input" required placeholder="email@navkar.com" value={teacherEmail} onChange={(e) => setTeacherEmail(e.target.value)} />
-                                    </div>
-                                    <div className="portal-form-group">
-                                        <label>Mobile Number</label>
-                                        <input type="text" className="portal-form-input" required placeholder="Contact Number" value={teacherMobile} onChange={(e) => setTeacherMobile(e.target.value)} />
                                     </div>
                                 </>
                             )}

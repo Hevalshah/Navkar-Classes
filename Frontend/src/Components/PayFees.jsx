@@ -13,7 +13,7 @@ const PayFees = () => {
     const [paySuccess, setPaySuccess] = useState(false);
     const [txnDetails, setTxnDetails] = useState(null);
 
-    const [totalFees, setTotalFees] = useState(35000);
+    const [totalFees, setTotalFees] = useState(0);
     const [paidAmount, setPaidAmount] = useState(0);
 
     // Form inputs
@@ -43,9 +43,7 @@ const PayFees = () => {
                 setPaidAmount(totalPaid);
             }
 
-            const stdName = (userData?.standard_name || "").toLowerCase();
-            const baseFees = stdName.includes("11") || stdName.includes("12") || stdName.includes("commerce") ? 50000 : 35000;
-            setTotalFees(baseFees);
+            setTotalFees(Number(userData?.totalFee || 0));
 
         } catch (e) {
             console.error(e);
@@ -53,6 +51,12 @@ const PayFees = () => {
     };
 
     useEffect(() => {
+        // Load Razorpay script
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+
         const fetchProfile = async () => {
             if (!token) {
                 setUser(fallbackUser);
@@ -67,6 +71,11 @@ const PayFees = () => {
             }
         };
         fetchProfile();
+
+        return () => {
+            document.body.removeChild(script);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleLogout = async () => {
@@ -93,60 +102,98 @@ const PayFees = () => {
             return;
         }
 
-        // Simple form validation
-        if (paymentMethod === "upi" && !upiId.includes("@")) {
-            alert("Please enter a valid UPI ID (e.g. user@okhdfcbank)");
-            return;
-        }
-        if (paymentMethod === "card" && (cardNumber.replace(/\s/g, "").length !== 16 || !cardExpiry || cardCvv.length !== 3)) {
-            alert("Please complete all Credit/Debit card fields correctly.");
-            return;
-        }
-
         setIsPaying(true);
 
-        const referenceNo = "NC" + Math.floor(100000 + Math.random() * 900000);
-
         try {
-            const res = await fetch("http://localhost:5000/api/fees/pay", {
+            // 1. Create order on backend
+            const orderRes = await fetch("http://localhost:5000/api/payments/create-order", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    amount: remainingAmount,
-                    paymentMode: paymentMethod.toUpperCase(),
-                    referenceNo: referenceNo
-                })
+                }
             });
 
-            if (res.ok) {
-                const data = await res.json();
+            if (!orderRes.ok) {
+                const errData = await orderRes.json();
+                alert(errData.message || "Failed to initiate payment.");
                 setIsPaying(false);
-                setPaySuccess(true);
-                setTxnDetails({
-                    id: "TXN" + Math.floor(1000000000 + Math.random() * 9000000000),
-                    date: new Date(data.paid_date).toLocaleString(),
-                    amount: remainingAmount,
-                    method: paymentMethod.toUpperCase(),
-                    ref: referenceNo
-                });
-            } else {
-                alert("Failed to complete transaction.");
-                setIsPaying(false);
+                return;
             }
+
+            const orderData = await orderRes.json();
+
+            // 2. Configure Razorpay options
+            const options = {
+                key: orderData.keyId,
+                amount: orderData.amount * 100, // Razorpay amount in paise
+                currency: orderData.currency,
+                name: "Navkar Classes",
+                description: "Online Tuition Fee Payment",
+                order_id: orderData.orderId,
+                handler: async function (response) {
+                    try {
+                        setIsPaying(true);
+                        // 3. Verify signature on backend
+                        const verifyRes = await fetch("http://localhost:5000/api/payments/verify", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                method: paymentMethod.toUpperCase()
+                            })
+                        });
+
+                        if (verifyRes.ok) {
+                            setIsPaying(false);
+                            setPaySuccess(true);
+                            setTxnDetails({
+                                id: response.razorpay_payment_id,
+                                date: new Date().toLocaleString(),
+                                amount: orderData.amount,
+                                method: paymentMethod.toUpperCase(),
+                                ref: response.razorpay_order_id
+                            });
+                            // Reload fees status to reflect updated paid amount
+                            loadFeesStatus(user);
+                        } else {
+                            const errData = await verifyRes.json();
+                            alert(errData.message || "Verification failed.");
+                            setIsPaying(false);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert("Payment verification error.");
+                        setIsPaying(false);
+                    }
+                },
+                prefill: {
+                    name: user?.name || "",
+                    email: user?.email || ""
+                },
+                theme: {
+                    color: "#2c7a7b"
+                },
+                modal: {
+                    ondismiss: function () {
+                        setIsPaying(false);
+                    }
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
         } catch (err) {
             console.error(err);
+            alert("Payment initiation connection failed.");
             setIsPaying(false);
         }
     };
-
-    const feeBreakdown = [
-        { id: 1, head: "School/Commerce Tuition Fee (Base)", amount: totalFees - 3000 },
-        { id: 2, head: "Weekly Assessment Test & Material Charge", amount: 2000 },
-        { id: 3, head: "Library & Digital portal Subscription", amount: 1000 }
-    ];
 
     return (
         <div className="dashboard-layout">
@@ -207,40 +254,9 @@ const PayFees = () => {
                             </button>
                         </div>
                     ) : (
-                        /* Standard Billing and Form View */
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "30px", alignItems: "start" }}>
-                            
-                            {/* Billing details column */}
-                            <div className="portal-card">
-                                <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", textTransform: "uppercase", color: "#4a5568", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>Fee Breakdown</h3>
-                                
-                                <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                                    {feeBreakdown.map(fee => (
-                                        <div key={fee.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", alignItems: "center" }}>
-                                            <span style={{ color: "#334155", maxWidth: "70%" }}>{fee.head}</span>
-                                            <span style={{ fontWeight: "600", color: "#1e293b" }}>₹{fee.amount.toLocaleString()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <hr style={{ border: "0", borderTop: "1px solid #e2e8f0", margin: "20px 0" }} />
-
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                                    <span style={{ color: "#718096" }}>Total Tuition Fee:</span>
-                                    <span style={{ fontWeight: "600" }}>₹{totalFees.toLocaleString()}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                                    <span style={{ color: "#2ecc71" }}>Total Amount Paid:</span>
-                                    <span style={{ fontWeight: "600", color: "#2ecc71" }}>₹{paidAmount.toLocaleString()}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                                    <span style={{ fontWeight: "700", color: "#1a202c" }}>Total Payable Balance</span>
-                                    <span style={{ fontSize: "20px", fontWeight: "bold", color: "var(--danger-color)" }}>₹{remainingAmount.toLocaleString()}</span>
-                                </div>
-                            </div>
-
-                            {/* Payment Method Column */}
-                            <div className="portal-card blue-theme">
+                        /* Standalone Payment Card View */
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
+                            <div className="portal-card blue-theme" style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
                                 <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", textTransform: "uppercase", color: "#4a5568", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>Payment Information</h3>
                                 
                                 <form onSubmit={handlePaymentSubmit} className="portal-form">
@@ -254,7 +270,7 @@ const PayFees = () => {
                                                     value="upi" 
                                                     checked={paymentMethod === "upi"}
                                                     onChange={() => setPaymentMethod("upi")}
-                                                />
+                                                 />
                                                 UPI (GPay/PhonePe)
                                             </label>
                                             <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px" }}>
@@ -356,7 +372,7 @@ const PayFees = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <i className="fas fa-shield-alt"></i> Secure Pay ₹{remainingAmount.toLocaleString()}
+                                                <i className="fas fa-shield-alt"></i> Pay Fees
                                             </>
                                         )}
                                     </button>

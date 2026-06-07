@@ -57,6 +57,23 @@ const Login = () => {
 
       {/* Right Side - Form */}
       <div className="login-right">
+        <div className="back-to-home-container" style={{ alignSelf: "flex-start", marginBottom: "15px" }}>
+          <span 
+            className="back-to-home" 
+            onClick={() => navigate("/")} 
+            style={{ 
+              cursor: "pointer", 
+              color: "#2c7a7b", 
+              fontSize: "15px", 
+              fontWeight: "600", 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "5px" 
+            }}
+          >
+            ← Back to Home
+          </span>
+        </div>
 
         <div className="login-header-text">
           <h1>Welcome Back</h1>

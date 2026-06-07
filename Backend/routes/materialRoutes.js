@@ -1,10 +1,11 @@
 const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { insertNotification } = require("./notificationRoutes");
 
 // Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "../uploads");
@@ -101,7 +102,70 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
       [title, description || "", subjectId, batchId, filePath, ext, size, req.user.id]
     );
 
-    res.status(201).json({ id: result.insertId, title, message: "Material uploaded successfully" });
+    const materialId = result.insertId;
+
+    // Fetch uploader name (works for both users and teachers tables)
+    let uploaderName = "Teacher";
+    try {
+      if (req.user.role === "teacher") {
+        const [[t]] = await pool.execute("SELECT name FROM teachers WHERE id = ? LIMIT 1", [req.user.id]);
+        if (t) uploaderName = t.name;
+      } else {
+        const [[u]] = await pool.execute("SELECT name FROM users WHERE id = ? LIMIT 1", [req.user.id]);
+        if (u) uploaderName = u.name;
+      }
+    } catch (_) {}
+
+    // Fetch subject name
+    let subjectName = "";
+    try {
+      const [[sub]] = await pool.execute("SELECT name FROM subjects WHERE id = ? LIMIT 1", [subjectId]);
+      if (sub) subjectName = sub.name;
+    } catch (_) {}
+
+    // Notify every student in the batch
+    try {
+      const [batchStudents] = await pool.execute(
+        `SELECT st.user_id FROM students st
+         JOIN users u ON st.user_id = u.id
+         WHERE st.batch_id = ? AND st.is_active = TRUE AND u.is_active = TRUE`,
+        [batchId]
+      );
+      for (const s of batchStudents) {
+        await insertNotification({
+          title:   `New Material Uploaded`,
+          message: `${uploaderName} uploaded ${title}.`,
+          type:    "material",
+          role:    "student",
+          userId:  s.user_id,
+          referenceId: materialId,
+          uniqueKey: `student:${s.user_id}:material:${materialId}`
+        });
+      }
+    } catch (_) {}
+
+    // Notify admin
+    await insertNotification({
+      title:   "New Material Uploaded",
+      message: `${uploaderName} uploaded ${title}${subjectName ? ` (${subjectName})` : ""}.`,
+      type:    "material",
+      role:    "admin",
+      referenceId: materialId,
+      uniqueKey: `admin:material:${materialId}`
+    });
+
+    // Notify staff
+    await insertNotification({
+      title:   "New Material Uploaded",
+      message: `${uploaderName} uploaded ${title}${subjectName ? ` (${subjectName})` : ""}.`,
+      type:    "material",
+      role:    "staff",
+      referenceId: materialId,
+      uniqueKey: `staff:material:${materialId}`
+    });
+
+    res.status(201).json({ id: materialId, title, message: "Material uploaded successfully" });
+
   } catch (err) {
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import { getProfile, logoutUser } from "../Services/authService";
+import { getProfile, logoutUser, updateProfile } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
@@ -298,28 +298,49 @@ const MyProfile = () => {
         }
     };
 
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
 
-        setTimeout(() => {
-            setIsSaving(false);
-            
-            const updatedUser = {
-                ...user,
-                name: editName,
-                mobile: editMobile,
-                parentName: editParentName,
-                email: editEmail,
-                address: editAddress,
-                batch: editBatch
-            };
+        const updatedUser = {
+            ...user,
+            name: editName,
+            mobile: editMobile,
+            parentName: editParentName,
+            email: editEmail,
+            address: editAddress,
+            batch: editBatch
+        };
 
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            setIsSaving(false);
             setUser(updatedUser);
             localStorage.setItem("editedUser", JSON.stringify(updatedUser));
             setIsEditOpen(false);
             alert("Profile details successfully updated!");
-        }, 1200);
+            return;
+        }
+
+        try {
+            const data = await updateProfile(token, {
+                name: editName,
+                mobile: editMobile,
+                parentName: editParentName,
+                email: editEmail,
+                address: editAddress
+            });
+            const apiUser = data.user || updatedUser;
+            setUser({ ...updatedUser, ...apiUser });
+            localStorage.removeItem("editedUser");
+            setIsEditOpen(false);
+            alert("Profile details successfully updated!");
+        } catch (error) {
+            alert(error.message || "Could not update profile details.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const isStaff = role === "staff" || role === "admin" || role === "teacher";

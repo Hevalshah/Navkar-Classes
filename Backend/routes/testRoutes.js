@@ -5,8 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
-
-// Setup upload folder for tests
+const { insertNotification } = require("./notificationRoutes");
 const uploadDir = path.join(__dirname, "../uploads/tests");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -101,7 +100,49 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
       [title, subjectId, batchId, instructions || "", totalMarks, filePath, req.user.id, testDate]
     );
 
-    res.status(201).json({ id: result.insertId, title, message: "Test created successfully" });
+    const testId = result.insertId;
+    const ts = Date.now();
+    const formattedDate = new Date(testDate).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+
+    // Fetch subject name
+    let subjectName = "Subject";
+    try {
+      const [[sub]] = await pool.execute("SELECT name FROM subjects WHERE id = ? LIMIT 1", [subjectId]);
+      if (sub) subjectName = sub.name;
+    } catch (_) {}
+
+    // Notify all students in the batch
+    try {
+      const [batchStudents] = await pool.execute(
+        `SELECT st.user_id FROM students st
+         JOIN users u ON st.user_id = u.id
+         WHERE st.batch_id = ? AND st.is_active = TRUE AND u.is_active = TRUE`,
+        [batchId]
+      );
+      for (const s of batchStudents) {
+        await insertNotification({
+          title: `New test scheduled: ${title} on ${formattedDate}`,
+          message: `A ${subjectName} test "${title}" has been scheduled for ${formattedDate}.`,
+          type: "test",
+          role: "student",
+          userId: s.user_id,
+          referenceId: testId,
+          uniqueKey: `student:${s.user_id}:test:${testId}:${ts}`
+        });
+      }
+    } catch (_) {}
+
+    // Notify admin
+    await insertNotification({
+      title: `Test created: ${title} (${subjectName}) on ${formattedDate}`,
+      message: `Test "${title}" for ${subjectName} scheduled on ${formattedDate}.`,
+      type: "test",
+      role: "admin",
+      referenceId: testId,
+      uniqueKey: `admin:test:${testId}:${ts}`
+    });
+
+    res.status(201).json({ id: testId, title, message: "Test created successfully" });
   } catch (err) {
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
@@ -256,6 +297,25 @@ router.post("/grade", authMiddleware, async (req, res) => {
         [testId, studentId, score, status || "Graded"]
       );
     }
+
+    // Notify student about their result
+    try {
+      const finalStatus = status || "Graded";
+      let testTitle = "Test";
+      const [[testRow]] = await pool.execute("SELECT title, total_marks FROM tests WHERE id = ? LIMIT 1", [testId]);
+      if (testRow) testTitle = testRow.title;
+      const totalMarks = testRow ? testRow.total_marks : "?";
+
+      await insertNotification({
+        title: `Result declared: ${testTitle} — Score: ${score}/${totalMarks}`,
+        message: `Your result for "${testTitle}" has been declared. You scored ${score} out of ${totalMarks}. Status: ${finalStatus}.`,
+        type: "test",
+        role: "student",
+        userId: studentId,
+        referenceId: testId,
+        uniqueKey: `student:${studentId}:result:${testId}:${Date.now()}`
+      });
+    } catch (_) {}
 
     res.json({ message: "Submission graded successfully" });
   } catch (err) {

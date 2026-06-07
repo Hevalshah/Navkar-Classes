@@ -272,7 +272,7 @@ router.get("/students", authMiddleware, isAcademicUser, async (req, res) => {
     const whereClause = `WHERE ${filters.join(" AND ")}`;
     const [rows] = await pool.execute(`
       SELECT u.id, st.id AS student_id, st.name, st.parent_name, st.mobile,
-             u.email, u.username, st.address, st.standard_id, st.batch_id,
+             u.email, u.username, st.address, st.total_fee, st.standard_id, st.batch_id,
              st.is_active, st.created_at,
              s.name AS standard_name, b.name AS batch_name
       FROM students st

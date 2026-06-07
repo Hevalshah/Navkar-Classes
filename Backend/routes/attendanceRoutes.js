@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { insertNotification } = require("./notificationRoutes");
 
-// Helper to check if role can manage attendance
 const isStaffUser = (req, res, next) => {
   if (req.user && (req.user.role === "staff" || req.user.role === "admin" || req.user.role === "teacher")) {
     next();
@@ -67,6 +67,29 @@ router.post("/submit", authMiddleware, isStaffUser, async (req, res) => {
     }
 
     await connection.commit();
+
+    // ── Send per-student attendance notifications ─────────────────────────────────
+    const dateLabel = new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    for (const record of attendanceData) {
+      const { studentId, status } = record;
+      const isPresent = status === "Present";
+      try {
+        await insertNotification({
+          title: isPresent
+            ? `Attendance marked: Present on ${dateLabel}`
+            : `Attendance marked: Absent on ${dateLabel}`,
+          message: isPresent
+            ? `Your attendance has been marked as Present for ${dateLabel}.`
+            : `You were marked Absent on ${dateLabel}. Contact your teacher if this is incorrect.`,
+          type: "attendance",
+          role: "student",
+          userId: studentId,
+          uniqueKey: `student:${studentId}:attendance:${date}`
+        });
+      } catch (_) {}
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     res.json({ message: "Attendance marked successfully" });
   } catch (err) {
     await connection.rollback();

@@ -1463,5 +1463,27 @@
     font-size: 20px;
 }
 
+@media (max-width: 768px) {
+    .portal-card {
+        overflow-x: auto !important;
+        padding: 12px !important;
+    }
+    .portal-table {
+        min-width: 600px;
+    }
+    /* Force full-width elements where appropriate on mobile */
+    .portal-btn, .btn-login, .landing-btn-primary, .landing-btn-secondary {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    /* Spacing overrides for dashboard components */
+    .dashboard-main-container {
+        padding: 10px !important;
+    }
+    .page-container {
+        padding: 10px !important;
+    }
+}
+
 
 

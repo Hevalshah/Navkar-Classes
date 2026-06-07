@@ -17,6 +17,7 @@ const mapUser = (row) => {
     address: row.profile_address || row.address,
     course: row.profile_course || row.course,
     assignedBatch: row.profile_assigned_batch || row.assigned_batch,
+    totalFee: Number(row.profile_total_fee ?? 0),
     standardId: row.profile_standard_id || row.standard_id,
     batchId: row.profile_batch_id || row.batch_id,
     isActive: Boolean(row.profile_is_active ?? row.is_active),
@@ -45,6 +46,7 @@ const SELECT_USER_QUERY = `
          st.address AS profile_address,
          st.course AS profile_course,
          st.assigned_batch AS profile_assigned_batch,
+         st.total_fee AS profile_total_fee,
          st.standard_id AS profile_standard_id,
          st.batch_id AS profile_batch_id,
          st.is_active AS profile_is_active,
@@ -96,7 +98,7 @@ const findActiveById = async (id) => {
   return mapUser(rows[0]);
 };
 
-const create = async ({ name, parentName, mobile, email, username, password, role = "student", address, course, assignedBatch, standardId, batchId }) => {
+const create = async ({ name, parentName, mobile, email, username, password, role = "student", address, course, assignedBatch, totalFee, standardId, batchId }) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -110,8 +112,8 @@ const create = async ({ name, parentName, mobile, email, username, password, rol
       await connection.execute(
         `INSERT INTO students (
            user_id, name, parent_name, mobile, address, course,
-           assigned_batch, standard_id, batch_id
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           assigned_batch, total_fee, standard_id, batch_id
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           result.insertId,
           name,
@@ -120,6 +122,7 @@ const create = async ({ name, parentName, mobile, email, username, password, rol
           address || null,
           course || null,
           assignedBatch || null,
+          totalFee || 0,
           standardId || null,
           batchId || null
         ]
@@ -149,6 +152,11 @@ const updateProfile = async (id, { name, mobile, parentName, email, address, use
      WHERE user_id = ?`,
     [name, mobile || null, parentName || null, address || null, id]
   );
+  return findById(id);
+};
+
+const updatePassword = async (id, hashedPassword) => {
+  await pool.execute("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, id]);
   return findById(id);
 };
 
@@ -183,6 +191,7 @@ module.exports = {
   findActiveById,
   insertMany,
   publicUser,
+  updatePassword,
   updateLastLogin,
   updateLastLogout
 };

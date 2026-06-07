@@ -82,6 +82,7 @@ const connectDB = async () => {
       address TEXT NULL,
       course VARCHAR(100) NULL,
       assigned_batch VARCHAR(100) NULL,
+      total_fee DECIMAL(10, 2) NOT NULL DEFAULT 0,
       standard_id INT NULL,
       batch_id INT NULL,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -153,6 +154,30 @@ const connectDB = async () => {
     )
   `);
 
+  // Migrate student columns if table already existed
+  const addStudentColumns = [
+    "ALTER TABLE students ADD COLUMN total_fee DECIMAL(10, 2) NOT NULL DEFAULT 0"
+  ];
+
+  for (const q of addStudentColumns) {
+    try {
+      await pool.query(q);
+    } catch (err) {}
+  }
+
+  await pool.query(`
+    UPDATE students st
+    LEFT JOIN standards s ON st.standard_id = s.id
+    SET st.total_fee = CASE
+      WHEN LOWER(COALESCE(s.name, '')) LIKE '%11%'
+        OR LOWER(COALESCE(s.name, '')) LIKE '%12%'
+        OR LOWER(COALESCE(s.name, '')) LIKE '%commerce%'
+      THEN 50000
+      ELSE 35000
+    END
+    WHERE st.total_fee = 0
+  `);
+
   // Move legacy student profile/academic data out of users into linked student rows.
   await pool.query(`
     INSERT INTO students (
@@ -165,6 +190,19 @@ const connectDB = async () => {
     FROM users u
     LEFT JOIN students st ON st.user_id = u.id
     WHERE u.role = 'student' AND st.id IS NULL
+  `);
+
+  await pool.query(`
+    UPDATE students st
+    LEFT JOIN standards s ON st.standard_id = s.id
+    SET st.total_fee = CASE
+      WHEN LOWER(COALESCE(s.name, '')) LIKE '%11%'
+        OR LOWER(COALESCE(s.name, '')) LIKE '%12%'
+        OR LOWER(COALESCE(s.name, '')) LIKE '%commerce%'
+      THEN 50000
+      ELSE 35000
+    END
+    WHERE st.total_fee = 0
   `);
 
   // Create timetable
@@ -268,6 +306,51 @@ const connectDB = async () => {
       reference_no VARCHAR(100) NULL,
       status ENUM('Paid', 'Pending') NOT NULL DEFAULT 'Paid',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create notifications
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      message TEXT NULL,
+      type VARCHAR(50) NOT NULL,
+      role ENUM('admin', 'staff', 'student', 'teacher') NOT NULL,
+      user_id INT NULL,
+      reference_id INT NULL,
+      unique_key VARCHAR(255) NOT NULL,
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_notification_key (unique_key),
+      INDEX idx_notifications_audience (role, user_id, created_at)
+    )
+  `);
+
+  // Track reads per logged-in user without changing notification ownership.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notification_reads (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      notification_id INT NOT NULL,
+      user_id INT NOT NULL,
+      read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_notification_read (notification_id, user_id),
+      FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create payments table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      payment_id VARCHAR(255) NULL,
+      order_id VARCHAR(255) NOT NULL UNIQUE,
+      student_id INT NOT NULL,
+      amount DECIMAL(10, 2) NOT NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'Created',
+      method VARCHAR(50) NULL,
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);

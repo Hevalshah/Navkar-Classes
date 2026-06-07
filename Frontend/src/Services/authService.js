@@ -59,6 +59,23 @@ export const updateProfile = async (token, data) => {
   return res.json();
 };
 
+export const changePassword = async (token, data) => {
+  const res = await fetch("http://localhost:5000/api/auth/change-password", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Password update failed");
+  }
+  return res.json();
+};
+
 export const loginUser = async (data) => {
   const res = await fetch("http://localhost:5000/api/auth/login", {
     method: "POST",

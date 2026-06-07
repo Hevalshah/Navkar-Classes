@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/navkar-logo.png";
 import classroom from "../assets/classroom.jpg";
@@ -8,9 +8,49 @@ import "../Styles/landing.css";
 
 const Landing = () => {
     const navigate = useNavigate();
+    const [cName, setCName] = useState("");
+    const [cEmail, setCEmail] = useState("");
+    const [cMsg, setCMsg] = useState("");
+    const [isSending, setIsSending] = useState(false);
+    const [toastMsg, setToastMsg] = useState("");
 
     const handleLoginRedirect = () => {
         navigate("/login");
+    };
+
+    const handleContactSubmit = async (e) => {
+        e.preventDefault();
+        setIsSending(true);
+        setToastMsg("");
+        try {
+            const res = await fetch("http://localhost:5000/api/contact", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: cName,
+                    email: cEmail,
+                    message: cMsg
+                })
+            });
+
+            if (res.ok) {
+                setToastMsg("Message sent successfully.");
+                setCName("");
+                setCEmail("");
+                setCMsg("");
+                setTimeout(() => setToastMsg(""), 5000);
+            } else {
+                const errData = await res.json();
+                alert(errData.message || "Failed to send message.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Connection error.");
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
@@ -260,21 +300,26 @@ const Landing = () => {
                     </div>
 
                     <div className="contact-form-section">
-                        <form onSubmit={(e) => { e.preventDefault(); alert("Thank you for contacting us! We'll get back to you soon."); }}>
+                        {toastMsg && (
+                            <div style={{ backgroundColor: "#d4edda", color: "#155724", padding: "12px", borderRadius: "8px", marginBottom: "15px", border: "1px solid #c3e6cb", textAlign: "center", fontSize: "14px", fontWeight: "600" }}>
+                                {toastMsg}
+                            </div>
+                        )}
+                        <form onSubmit={handleContactSubmit}>
                             <div className="contact-form-group">
                                 <label htmlFor="c-name">Full Name</label>
-                                <input type="text" id="c-name" className="contact-input" placeholder="Enter your name" required />
+                                <input type="text" id="c-name" className="contact-input" placeholder="Enter your name" value={cName} onChange={(e) => setCName(e.target.value)} required />
                             </div>
                             <div className="contact-form-group">
                                 <label htmlFor="c-email">Email Address</label>
-                                <input type="email" id="c-email" className="contact-input" placeholder="Enter your email" required />
+                                <input type="email" id="c-email" className="contact-input" placeholder="Enter your email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} required />
                             </div>
                             <div className="contact-form-group">
                                 <label htmlFor="c-msg">Message / Query</label>
-                                <textarea id="c-msg" className="contact-textarea" placeholder="How can we help you?" required></textarea>
+                                <textarea id="c-msg" className="contact-textarea" placeholder="How can we help you?" value={cMsg} onChange={(e) => setCMsg(e.target.value)} required></textarea>
                             </div>
-                            <button type="submit" className="landing-btn-primary" style={{ width: "100%" }}>
-                                Send Message
+                            <button type="submit" className="landing-btn-primary" style={{ width: "100%" }} disabled={isSending}>
+                                {isSending ? "Sending..." : "Send Message"}
                             </button>
                         </form>
                     </div>

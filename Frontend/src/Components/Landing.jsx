@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/navkar-logo.png";
 import classroom from "../assets/classroom.jpg";
 import saurabh from "../assets/saurabh.jpeg";
 import kaksha from "../assets/kaksha.jpeg";
+import nancy from "../assets/nancy.jpeg";
 import "../Styles/landing.css";
 
 const Landing = () => {
@@ -13,10 +14,17 @@ const Landing = () => {
     const [cMsg, setCMsg] = useState("");
     const [isSending, setIsSending] = useState(false);
     const [toastMsg, setToastMsg] = useState("");
+    const messageTextareaRef = useRef(null);
 
     const handleLoginRedirect = () => {
         navigate("/login");
     };
+
+    useEffect(() => {
+        if (!messageTextareaRef.current) return;
+        messageTextareaRef.current.style.height = "auto";
+        messageTextareaRef.current.style.height = `${messageTextareaRef.current.scrollHeight}px`;
+    }, [cMsg]);
 
     const handleContactSubmit = async (e) => {
         e.preventDefault();
@@ -36,18 +44,18 @@ const Landing = () => {
             });
 
             if (res.ok) {
-                setToastMsg("Message sent successfully.");
+                setToastMsg("Your message has been sent successfully.");
                 setCName("");
                 setCEmail("");
                 setCMsg("");
                 setTimeout(() => setToastMsg(""), 5000);
             } else {
                 const errData = await res.json();
-                alert(errData.message || "Failed to send message.");
+                alert(errData.message || "Unable to send your message. Please try again.");
             }
         } catch (err) {
             console.error(err);
-            alert("Connection error.");
+            alert("Unable to connect. Please try again.");
         } finally {
             setIsSending(false);
         }
@@ -58,7 +66,7 @@ const Landing = () => {
             {/* Header / Navbar */}
             <nav className="landing-nav">
                 <div className="landing-logo">
-                    <img src={logo} alt="Navkar Classes Logo" />
+                    <img src={logo} alt="Navkar Classes logo" />
                     <span>Navkar Classes</span>
                 </div>
                 <ul className="landing-links">
@@ -69,29 +77,29 @@ const Landing = () => {
                     <li><a href="#contact">Contact</a></li>
                 </ul>
                 <button onClick={handleLoginRedirect} className="landing-nav-btn">
-                    <i className="fas fa-sign-in-alt"></i> Login
+                    <i className="fas fa-sign-in-alt"></i> Log in
                 </button>
             </nav>
 
             {/* Hero Section */}
             <header className="landing-hero">
                 <div className="landing-hero-content">
-                    <span className="landing-hero-tag">Best Coaching Institute</span>
+                    <span className="landing-hero-tag">Trusted Coaching Institute</span>
                     <h1>Empowering Dreams, Shaping <span>Careers</span></h1>
                     <p>
-                        Welcome to Navkar Classes, the premier coaching institute for Standard 5 to 10 and 11th & 12th Commerce. Connect with expert faculty, access quality study materials, and take control of your academic journey.
+                        Welcome to Navkar Classes, a trusted coaching institute for Standards 5 to 10 and 11th and 12th Commerce. Learn with expert faculty, access quality study materials, and take charge of your academic journey.
                     </p>
                     <div className="landing-hero-actions">
                         <button onClick={handleLoginRedirect} className="landing-btn-primary">
-                            Get Started
+                            Get started
                         </button>
                         <a href="#courses" className="landing-btn-secondary" style={{ textAlign: "center", textDecoration: "none" }}>
-                            Explore Programs
+                            Explore programs
                         </a>
                     </div>
                 </div>
                 <div className="landing-hero-image">
-                    <img src={classroom} alt="Navkar Classes Classroom" />
+                    <img src={classroom} alt="Navkar Classes classroom" />
                 </div>
             </header>
 
@@ -99,23 +107,23 @@ const Landing = () => {
             <section id="about" className="landing-section">
                 <div className="about-grid">
                     <div className="about-img">
-                        <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1470&auto=format&fit=crop" alt="Students studying" />
+                        <img src={"https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1470&auto=format&fit=crop"} alt="Students studying" />
                     </div>
                     <div className="about-info">
                         <h3>Why Choose Navkar Classes?</h3>
                         <p>
-                            Established with the vision of providing top-notch academic guidance, Navkar Classes has consistently produced high-ranking achievers in School Boards (Std 5-10) and Commerce Streams (11th & 12th). We focus on conceptual clarity, rigorous evaluation, and individual feedback.
+                            Founded to provide high-quality academic guidance, Navkar Classes has consistently helped students achieve strong results in Standards 5 to 10 and 11th and 12th Commerce. We focus on conceptual clarity, regular evaluation, and personalized feedback.
                         </p>
                         <p>
-                            Our digital student portal enables students to seamlessly track their timetable, view exam submissions, access learning materials, check attendance registers, and view progress reports.
+                            Our digital student portal helps students track their Timetable, view exam submissions, access learning materials, check attendance, and review progress reports with ease.
                         </p>
                         <div className="about-stats">
                             <div className="stat-card">
                                 <h4>13+</h4>
-                                <p>Years Experience</p>
+                                <p>Years of Experience</p>
                             </div>
                             <div className="stat-card">
-                                <h4>1k+</h4>
+                                <h4>1,000+</h4>
                                 <p>Students Mentored</p>
                             </div>
                             <div className="stat-card">
@@ -131,7 +139,7 @@ const Landing = () => {
             <section id="courses" className="landing-section alt-bg">
                 <div className="landing-section-header">
                     <h2>Our Coaching Programs</h2>
-                    <p>Accelerate your academic path with customized batches taught by veteran subject educators.</p>
+                    <p>Build confidence with focused batches led by experienced subject educators.</p>
                 </div>
                 <div className="courses-grid">
                     <div className="course-card">
@@ -139,12 +147,12 @@ const Landing = () => {
                             <div className="course-icon-box">
                                 <i className="fas fa-book-reader"></i>
                             </div>
-                            <h3>Standard 5 to 10</h3>
-                            <p>Master the basics of Mathematics, Science, English, and Social Studies with our comprehensive school-level coaching programs.</p>
+                            <h3>Standards 5 to 10</h3>
+                            <p>Strengthen core concepts in Mathematics, Science, English, and Social Studies with comprehensive school-level coaching.</p>
                             <ul className="course-features">
-                                <li><i className="fas fa-check-circle"></i> Daily Homework Sheets</li>
-                                <li><i className="fas fa-check-circle"></i> Chapter-wise Tests</li>
-                                <li><i className="fas fa-check-circle"></i> Interactive Doubt Sessions</li>
+                                <li><i className="fas fa-check-circle"></i> Daily homework sheets</li>
+                                <li><i className="fas fa-check-circle"></i> Chapter-wise tests</li>
+                                <li><i className="fas fa-check-circle"></i> Interactive doubt sessions</li>
                              </ul>
                         </div>
                     </div>
@@ -154,12 +162,12 @@ const Landing = () => {
                             <div className="course-icon-box">
                                 <i className="fas fa-balance-scale"></i>
                             </div>
-                            <h3>11th & 12th Commerce</h3>
-                            <p>Deep-dive into Accountancy, Business Studies, Economics, and Statistics with highly experienced coaching faculty.</p>
+                            <h3>11th and 12th Commerce</h3>
+                            <p>Build a strong command of Accountancy, Business Studies, Economics, and Statistics with experienced Commerce faculty.</p>
                             <ul className="course-features">
-                                <li><i className="fas fa-check-circle"></i> Board Exam Prep Series</li>
-                                <li><i className="fas fa-check-circle"></i> Formula Sheets & Key Notes</li>
-                                <li><i className="fas fa-check-circle"></i> Detailed Assignment Reviews</li>
+                                <li><i className="fas fa-check-circle"></i> Board exam preparation series</li>
+                                <li><i className="fas fa-check-circle"></i> Formula sheets and key notes</li>
+                                <li><i className="fas fa-check-circle"></i> Detailed assignment reviews</li>
                             </ul>
                         </div>
                     </div>
@@ -169,11 +177,11 @@ const Landing = () => {
                             <div className="course-icon-box">
                                 <i className="fas fa-graduation-cap"></i>
                             </div>
-                            <h3>Mock Board Exams</h3>
-                            <p>Ultimate board-level preparation covering comprehensive test papers, timing strategies, and detailed answer sheet reviews.</p>
+                            <h3>Mock Board Papers</h3>
+                            <p>Prepare for board exams with full-length papers, time-management strategies, and detailed answer sheet reviews.</p>
                             <ul className="course-features">
-                                <li><i className="fas fa-check-circle"></i> Real-time Paper Pattern</li>
-                                <li><i className="fas fa-check-circle"></i> Performance Analysis</li>
+                                <li><i className="fas fa-check-circle"></i> Current paper pattern</li>
+                                <li><i className="fas fa-check-circle"></i> Performance analysis</li>
                                 <li><i className="fas fa-check-circle"></i> Structured Timetables</li>
                             </ul>
                         </div>
@@ -185,7 +193,7 @@ const Landing = () => {
             <section id="faculty" className="landing-section">
                 <div className="landing-section-header">
                     <h2>Meet Our Faculty</h2>
-                    <p>Learn from standard-setting educators committed to your academic success.</p>
+                    <p>Learn from dedicated educators committed to your academic success.</p>
                 </div>
                 <div className="faculty-grid">
                     <div className="faculty-card">
@@ -198,7 +206,7 @@ const Landing = () => {
                         </div>
                         <h3>Saurabh Shah</h3>
                         <span>B.Com</span>
-                        <p>Renowned educator mentoring students on physics, chemistry, and biological systems.</p>
+                        <p>Renowned educator who mentors students in Commerce concepts and Social Studies.</p>
                     </div>
                     <div className="faculty-card">
                         <div className="faculty-img-wrapper">
@@ -210,7 +218,7 @@ const Landing = () => {
                         </div>
                         <h3>Kaksha Shah</h3>
                         <span>B.Sc</span>
-                        <p>Over 15 years of experience in teaching subjects to class 5th to 12th.</p>
+                        <p>Over 15 years of experience teaching Mathematics and Science.</p>
                     </div>
                 </div>
             </section>
@@ -225,15 +233,19 @@ const Landing = () => {
                     <div className="testimonial-card">
                         <i className="fas fa-quote-right quote-icon"></i>
                         <p className="testimonial-text">
-                            "The mock board exam series and detailed evaluation reports helped me identify my weak spots. I cleared my 10th Board with a top rank!"
+                            "The mock board exam series, paper sets, weekly tests, and detailed evaluation reports helped me identify my weak areas. I cleared my Standard 10 board exam with a great result."
                         </p>
                         <div className="testimonial-user">
                             <div className="testimonial-avatar">
-                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=128&auto=format&fit=crop" alt="Student avatar" />
+                                <img
+                                src={nancy}
+                                alt="Nancy"
+                                style={{ "--faculty-focus-y": "27%" }}
+                            />
                             </div>
                             <div className="testimonial-info">
-                                <h4>Pooja Patel</h4>
-                                <p>Standard 10 Ranker</p>
+                                <h4>Nancy</h4>
+                                <p>Standard 10 Achiever</p>
                             </div>
                         </div>
                     </div>
@@ -259,13 +271,13 @@ const Landing = () => {
             {/* Contact Section */}
             <section id="contact" className="landing-section">
                 <div className="landing-section-header">
-                    <h2>Get In Touch</h2>
-                    <p>Have any queries? Reach out to us, and our academic counsellors will get back to you shortly.</p>
+                    <h2>Get in Touch</h2>
+                    <p>Have a question? Reach out to us, and our academic counselors will get back to you shortly.</p>
                 </div>
                 <div className="contact-container">
                     <div className="contact-info-section">
                         <h3>Navkar Classes Office</h3>
-                        <p>We are located in GIDC colony, Vadodara. Feel free to call us or stop by.</p>
+                        <p>We are located in GIDC Colony, Vadodara. Feel free to call us or visit our office.</p>
                         <div className="contact-methods">
                             <div className="contact-method-item">
                                 <div className="contact-method-icon">
@@ -273,7 +285,7 @@ const Landing = () => {
                                 </div>
                                 <div className="contact-method-text">
                                     <h4>Our Address</h4>
-                                    <p>B-1/10 GIDC Colony,OPP. ESI Hospital, Near Vegetable Market, Manjalpur Road, Vadodara, Gujarat - 390011</p>
+                                    <p>B-1/10, GIDC Colony, Opp. ESI Hospital, Near Vegetable Market, Manjalpur Road, Vadodara, Gujarat - 390011</p>
                                 </div>
                             </div>
 
@@ -315,11 +327,11 @@ const Landing = () => {
                                 <input type="email" id="c-email" className="contact-input" placeholder="Enter your email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} required />
                             </div>
                             <div className="contact-form-group">
-                                <label htmlFor="c-msg">Message / Query</label>
-                                <textarea id="c-msg" className="contact-textarea" placeholder="How can we help you?" value={cMsg} onChange={(e) => setCMsg(e.target.value)} required></textarea>
+                                <label htmlFor="c-msg">Message or Query</label>
+                                <textarea id="c-msg" className="contact-textarea" placeholder="How can we help you?" value={cMsg} onChange={(e) => setCMsg(e.target.value)} ref={messageTextareaRef} required></textarea>
                             </div>
                             <button type="submit" className="landing-btn-primary" style={{ width: "100%" }} disabled={isSending}>
-                                {isSending ? "Sending..." : "Send Message"}
+                                {isSending ? "Sending..." : "Send message"}
                             </button>
                         </form>
                     </div>
@@ -328,7 +340,7 @@ const Landing = () => {
 
             {/* Footer */}
             <footer className="landing-footer">
-                <p>&copy; {new Date().getFullYear()} Navkar Classes. All Rights Reserved. Built for student excellence.</p>
+                <p>&copy; {new Date().getFullYear()} Navkar Classes. All rights reserved. Built for student excellence.</p>
             </footer>
         </div>
     );

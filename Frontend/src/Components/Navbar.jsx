@@ -38,10 +38,10 @@ const Navbar = ({ user, onLogout, role = "student" }) => {
                 {/* Navigation Menu */}
                 <ul className={`nav-menu ${mobileMenuOpen ? "active" : ""}`}>
                     <li className="nav-item">
-                        <Link to={role === "admin" || role === "staff" ? "/admin-dashboard" : role === "teacher" ? "/teacher-dashboard" : "/dashboard"} className="nav-link">Dashboard</Link>
+                        <Link to={role === "admin" ? "/admin-dashboard" : role === "teacher" ? "/teacher-dashboard" : "/dashboard"} className="nav-link">Dashboard</Link>
                     </li>
 
-                    {role === "staff" || role === "admin" ? (
+                    {role === "admin" ? (
                         <>
                             <li className="nav-item">
                                 <Link to="/teacher-registration" className="nav-link">Teacher Registration</Link>

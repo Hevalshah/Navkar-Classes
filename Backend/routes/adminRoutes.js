@@ -3,46 +3,26 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 const Teacher = require("../models/Teacher");
 
-// Helper to ensure role is admin
-const isAdmin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    res.status(403).json({ message: "Access denied. Admins only." });
-  }
-};
-
-const isStaffUser = (req, res, next) => {
-  if (req.user && (req.user.role === "staff" || req.user.role === "admin")) {
-    return next();
-  }
-  res.status(403).json({ message: "Access denied. Staff only." });
-};
-
-const isAcademicUser = (req, res, next) => {
-  if (req.user && (req.user.role === "staff" || req.user.role === "admin" || req.user.role === "teacher")) {
-    return next();
-  }
-  res.status(403).json({ message: "Access denied. Authorized roles only." });
-};
-
-const isStudentManager = isAcademicUser;
+const adminOnly = authorizeRoles("admin");
+const academicUser = authorizeRoles("admin", "teacher");
+const studentManager = academicUser;
 
 // ===============================
 // STANDARDS CRUD
 // ===============================
 router.get("/standards", async (req, res) => {
   try {
-    const [rows] = await pool.execute("SELECT * FROM standards ORDER BY id DESC");
+    const [rows] = await pool.execute("SELECT * FROM standards ORDER BY id ASC");
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: "Error fetching standards", error: err.message });
   }
 });
 
-router.post("/standards", authMiddleware, isAdmin, async (req, res) => {
+router.post("/standards", authMiddleware, adminOnly, async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ message: "Standard name is required" });
   try {
@@ -53,7 +33,7 @@ router.post("/standards", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
-router.put("/standards/:id", authMiddleware, isAdmin, async (req, res) => {
+router.put("/standards/:id", authMiddleware, adminOnly, async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ message: "Standard name is required" });
   try {
@@ -64,7 +44,7 @@ router.put("/standards/:id", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
-router.delete("/standards/:id", authMiddleware, isAdmin, async (req, res) => {
+router.delete("/standards/:id", authMiddleware, adminOnly, async (req, res) => {
   try {
     await pool.execute("DELETE FROM standards WHERE id = ?", [req.params.id]);
     res.json({ message: "Standard deleted successfully" });
@@ -82,7 +62,7 @@ router.get("/batches", async (req, res) => {
       SELECT b.*, s.name AS standard_name 
       FROM batches b 
       JOIN standards s ON b.standard_id = s.id 
-      ORDER BY b.id DESC
+      ORDER BY b.id ASC
     `);
     res.json(rows);
   } catch (err) {
@@ -90,7 +70,7 @@ router.get("/batches", async (req, res) => {
   }
 });
 
-router.post("/batches", authMiddleware, isAdmin, async (req, res) => {
+router.post("/batches", authMiddleware, adminOnly, async (req, res) => {
   const { name, standardId } = req.body;
   if (!name || !standardId) return res.status(400).json({ message: "Name and Standard ID are required" });
   try {
@@ -101,7 +81,7 @@ router.post("/batches", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
-router.put("/batches/:id", authMiddleware, isAdmin, async (req, res) => {
+router.put("/batches/:id", authMiddleware, adminOnly, async (req, res) => {
   const { name, standardId } = req.body;
   if (!name || !standardId) return res.status(400).json({ message: "Name and Standard ID are required" });
   try {
@@ -112,7 +92,7 @@ router.put("/batches/:id", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
-router.delete("/batches/:id", authMiddleware, isAdmin, async (req, res) => {
+router.delete("/batches/:id", authMiddleware, adminOnly, async (req, res) => {
   try {
     await pool.execute("DELETE FROM batches WHERE id = ?", [req.params.id]);
     res.json({ message: "Batch deleted successfully" });
@@ -130,7 +110,7 @@ router.get("/subjects", async (req, res) => {
       SELECT sub.*, s.name AS standard_name 
       FROM subjects sub 
       JOIN standards s ON sub.standard_id = s.id 
-      ORDER BY sub.id DESC
+      ORDER BY sub.id ASC
     `);
     res.json(rows);
   } catch (err) {
@@ -138,7 +118,7 @@ router.get("/subjects", async (req, res) => {
   }
 });
 
-router.post("/subjects", authMiddleware, isAdmin, async (req, res) => {
+router.post("/subjects", authMiddleware, adminOnly, async (req, res) => {
   const { name, standardId } = req.body;
   if (!name || !standardId) return res.status(400).json({ message: "Subject name and Standard ID are required" });
   try {
@@ -149,7 +129,7 @@ router.post("/subjects", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
-router.put("/subjects/:id", authMiddleware, isAdmin, async (req, res) => {
+router.put("/subjects/:id", authMiddleware, adminOnly, async (req, res) => {
   const { name, standardId } = req.body;
   if (!name || !standardId) return res.status(400).json({ message: "Subject name and Standard ID are required" });
   try {
@@ -160,7 +140,7 @@ router.put("/subjects/:id", authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
-router.delete("/subjects/:id", authMiddleware, isAdmin, async (req, res) => {
+router.delete("/subjects/:id", authMiddleware, adminOnly, async (req, res) => {
   try {
     await pool.execute("DELETE FROM subjects WHERE id = ?", [req.params.id]);
     res.json({ message: "Subject deleted successfully" });
@@ -172,7 +152,7 @@ router.delete("/subjects/:id", authMiddleware, isAdmin, async (req, res) => {
 // ===============================
 // TEACHERS CRUD
 // ===============================
-router.get("/teachers", authMiddleware, isAcademicUser, async (req, res) => {
+router.get("/teachers", authMiddleware, academicUser, async (req, res) => {
   try {
     const rows = await Teacher.findAll();
     res.json(rows.map(Teacher.publicTeacher));
@@ -181,7 +161,7 @@ router.get("/teachers", authMiddleware, isAcademicUser, async (req, res) => {
   }
 });
 
-router.post("/teachers", authMiddleware, isStaffUser, async (req, res) => {
+router.post("/teachers", authMiddleware, adminOnly, async (req, res) => {
   const { name, email, mobile, password, status } = req.body;
   if (!name || !email || !mobile || !password) {
     return res.status(400).json({ message: "Name, email, mobile, and password are required" });
@@ -206,7 +186,7 @@ router.post("/teachers", authMiddleware, isStaffUser, async (req, res) => {
   }
 });
 
-router.put("/teachers/:id", authMiddleware, isStaffUser, async (req, res) => {
+router.put("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
   const { name, email, mobile, password, status } = req.body;
   if (!name || !email || !mobile || !status) {
     return res.status(400).json({ message: "Name, email, mobile, and status are required" });
@@ -228,7 +208,7 @@ router.put("/teachers/:id", authMiddleware, isStaffUser, async (req, res) => {
   }
 });
 
-router.delete("/teachers/:id", authMiddleware, isStaffUser, async (req, res) => {
+router.delete("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
   try {
     await Teacher.remove(parseInt(req.params.id));
     res.json({ message: "Teacher deleted successfully" });
@@ -240,7 +220,7 @@ router.delete("/teachers/:id", authMiddleware, isStaffUser, async (req, res) => 
 // ===============================
 // FETCH REGISTERED STUDENTS (For lists/attendance)
 // ===============================
-router.get("/students", authMiddleware, isAcademicUser, async (req, res) => {
+router.get("/students", authMiddleware, academicUser, async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
@@ -280,7 +260,7 @@ router.get("/students", authMiddleware, isAcademicUser, async (req, res) => {
       LEFT JOIN standards s ON st.standard_id = s.id
       LEFT JOIN batches b ON st.batch_id = b.id
       ${whereClause}
-      ORDER BY st.created_at DESC, st.name ASC
+      ORDER BY u.id ASC
       LIMIT ${limit} OFFSET ${offset}
     `, params);
 
@@ -306,7 +286,7 @@ router.get("/students", authMiddleware, isAcademicUser, async (req, res) => {
   }
 });
 
-router.put("/students/:id", authMiddleware, isStudentManager, async (req, res) => {
+router.put("/students/:id", authMiddleware, studentManager, async (req, res) => {
   const { name, email, mobile, parentName, address, standardId, batchId, isActive } = req.body;
 
   if (!name || !email) {
@@ -389,7 +369,7 @@ router.put("/students/:id", authMiddleware, isStudentManager, async (req, res) =
   }
 });
 
-router.delete("/students/:id", authMiddleware, isStudentManager, async (req, res) => {
+router.delete("/students/:id", authMiddleware, studentManager, async (req, res) => {
   try {
     const [result] = await pool.execute(
       "DELETE FROM users WHERE id = ? AND role = 'student'",

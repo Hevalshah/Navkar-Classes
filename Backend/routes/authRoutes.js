@@ -1,27 +1,22 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Teacher = require("../models/Teacher");
+const AuthController = require("../controllers/AuthController");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
+const { issueTokens } = require("../services/tokenService");
 const { pool } = require("../config/db");
 
 const router = express.Router();
-
-const isStaffUser = (req, res, next) => {
-  if (req.user && (req.user.role === "staff" || req.user.role === "admin")) {
-    return next();
-  }
-  res.status(403).json({ message: "Access denied. Staff only." });
-};
 
 // ===============================
 // REGISTER ROUTE
 // ===============================
 router.post("/register", async (req, res) => {
   try {
-    const { name, parentName, mobile, email, password, role } = req.body;
-    console.log("Register Request:", { name, email, role });
+    const { name, parentName, mobile, email, password } = req.body;
+    console.log("Register Request:", { name, email, role: "student" });
 
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -38,18 +33,12 @@ router.post("/register", async (req, res) => {
       mobile,
       email,
       password: hashedPassword,
-      role: role || "student"
+      role: "student"
     });
 
     console.log("User created successfully:", user.id);
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.status(201).json({ token, role: user.role });
+    res.status(201).json({ ...issueTokens(user), role: user.role });
   } catch (error) {
     console.error("Registration Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -57,9 +46,9 @@ router.post("/register", async (req, res) => {
 });
 
 // ===============================
-// REGISTER STUDENT ROUTE (STAFF ROLE ONLY)
+// REGISTER STUDENT ROUTE (ADMIN ROLE ONLY)
 // ===============================
-router.post("/register-student", authMiddleware, isStaffUser, async (req, res) => {
+router.post("/register-student", authMiddleware, authorizeRoles("admin"), async (req, res) => {
   try {
     const { name, mobile, email, address, course, assignedBatch, standardId, batchId, totalFee, username, password } = req.body;
     console.log("Register Student Request:", { name, email });
@@ -214,24 +203,20 @@ router.put("/change-password", authMiddleware, async (req, res) => {
 // ===============================
 // GET CURRENT USER ROUTE
 // ===============================
-router.get("/me", async (req, res) => {
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header("Authorization");
-    if (!authHeader) {
-      return res.status(401).json({ message: "Please authenticate" });
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    if (decoded.role === "teacher") {
-      const teacher = await Teacher.findById(decoded.id);
+    if (req.user.role === "teacher") {
+      const teacher = await Teacher.findById(req.user.id);
       if (!teacher) {
         return res.status(404).json({ message: "User not found" });
       }
       res.json(Teacher.publicTeacher(teacher));
     } else {
-      const user = await User.findActiveById(decoded.id);
+      const user = await User.findActiveById(req.user.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -245,62 +230,25 @@ router.get("/me", async (req, res) => {
 // ===============================
 // LOGIN ROUTE
 // ===============================
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
-
-    let user;
-    if (role === "teacher") {
-      user = await Teacher.findByEmail(email);
-      if (!user || user.status !== "Active") {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-    } else {
-      user = await User.findByEmailAndRole(email, role);
-    }
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const token = jwt.sign(
-      { id: user.id, role: user.role || "teacher" },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    if (role !== "teacher") {
-      await User.updateLastLogin(user.id);
-    }
-
-    res.json({ token, role: user.role || "teacher" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+router.post("/login", AuthController.publicLogin);
+router.post("/refresh", AuthController.refreshPublicToken);
 
 // ===============================
 // LOGOUT ROUTE
 // ===============================
-router.post("/logout", async (req, res) => {
+router.post("/logout", authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header("Authorization");
-    if (!authHeader) {
-      return res.status(401).json({ message: "Please authenticate" });
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    await User.updateLastLogout(decoded.id);
+    if (req.user.role !== "teacher") {
+      await User.updateLastLogout(req.user.id);
+    }
 
     res.json({ message: "Logged out successfully" });
   } catch (error) {
-    res.status(401).json({ message: "Please authenticate" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 

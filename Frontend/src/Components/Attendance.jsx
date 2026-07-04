@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { getProfile, logoutUser } from "../Services/authService";
@@ -10,18 +10,18 @@ const StudentAttendance = ({ user, handleLogout }) => {
     const [attendanceRecords, setAttendanceRecords] = useState([]);
     const token = localStorage.getItem("token");
 
-    const fetchAttendanceHistory = async () => {
+    const fetchAttendanceHistory = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/attendance/history", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setAttendanceRecords(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchAttendanceHistory();
-    }, []);
+    }, [fetchAttendanceHistory]);
 
     const totalLectures = attendanceRecords.length;
     const presentCount = attendanceRecords.filter(r => r.status === "Present").length;
@@ -132,7 +132,7 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
 
     const token = localStorage.getItem("token");
 
-    const loadBatches = async () => {
+    const loadBatches = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/admin/batches");
             if (res.ok) {
@@ -143,9 +143,9 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
                 }
             }
         } catch (e) { console.error(e); }
-    };
+    }, [selectedBatch]);
 
-    const loadStudents = async () => {
+    const loadStudents = useCallback(async () => {
         if (!selectedBatch) return;
         try {
             const res = await fetch(`http://localhost:5000/api/attendance/students/${selectedBatch}`, {
@@ -157,15 +157,15 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
                 setStudents(list.map(s => ({ ...s, status: "Present" })));
             }
         } catch (e) { console.error(e); }
-    };
+    }, [selectedBatch, token]);
 
     useEffect(() => {
         loadBatches();
-    }, []);
+    }, [loadBatches]);
 
     useEffect(() => {
         loadStudents();
-    }, [selectedBatch]);
+    }, [loadStudents]);
 
     const handleStatusChange = (id, newStatus) => {
         setStudents(students.map(s => s.id === id ? { ...s, status: newStatus } : s));
@@ -310,7 +310,7 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
                             <table className="portal-table">
                                 <thead>
                                     <tr>
-                                        <th>Student ID</th>
+                                        <th>#</th>
                                         <th>Student Name</th>
                                         <th>Current Status</th>
                                         <th style={{ textAlign: 'center' }}>Mark Attendance</th>
@@ -318,9 +318,9 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
                                 </thead>
                                 <tbody>
                                     {filteredStudents.length > 0 ? (
-                                        filteredStudents.map(student => (
+                                        filteredStudents.map((student, index) => (
                                             <tr key={student.id}>
-                                                <td><strong>#{student.id}</strong></td>
+                                                <td><strong>{index + 1}</strong></td>
                                                 <td style={{ color: "var(--primary-color)", fontWeight: "500" }}>{student.name}</td>
                                                 <td>
                                                     <span className={`portal-badge ${student.status === "Present" ? "success" : student.status === "Absent" ? "danger" : "warning"}`}>

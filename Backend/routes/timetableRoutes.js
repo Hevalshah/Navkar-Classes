@@ -2,14 +2,9 @@ const express = require("express");
 const router = express.Router();
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 
-const isStaffUser = (req, res, next) => {
-  if (req.user && (req.user.role === "staff" || req.user.role === "admin" || req.user.role === "teacher")) {
-    next();
-  } else {
-    res.status(403).json({ message: "Access denied. Authorized roles only." });
-  }
-};
+const canManageTimetable = authorizeRoles("admin", "teacher");
 
 // ===============================
 // GET TIMETABLE
@@ -37,7 +32,7 @@ router.get("/", authMiddleware, async (req, res) => {
         return res.json([]);
       }
     } else {
-      // Staff: optionally filter by batch and/or standard.
+      // Administrator/faculty: optionally filter by batch and/or standard.
       const { batchId, standardId } = req.query;
       if (batchId) {
         query += " WHERE t.batch_id = ?";
@@ -59,7 +54,7 @@ router.get("/", authMiddleware, async (req, res) => {
 // ===============================
 // CREATE SCHEDULE ENTRY
 // ===============================
-router.post("/", authMiddleware, isStaffUser, async (req, res) => {
+router.post("/", authMiddleware, canManageTimetable, async (req, res) => {
   const { batchId, day, subjectId, teacherId, timeSlot, room } = req.body;
   if (!batchId || !day || !subjectId || !teacherId || !timeSlot || !room) {
     return res.status(400).json({ message: "All fields are required" });
@@ -105,7 +100,7 @@ router.post("/", authMiddleware, isStaffUser, async (req, res) => {
 // ===============================
 // DELETE SCHEDULE ENTRY
 // ===============================
-router.delete("/:id", authMiddleware, isStaffUser, async (req, res) => {
+router.delete("/:id", authMiddleware, canManageTimetable, async (req, res) => {
   try {
     await pool.execute("DELETE FROM timetable WHERE id = ?", [req.params.id]);
     res.json({ message: "Timetable entry deleted successfully" });

@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 const uploadDir = path.join(__dirname, "../uploads/tests");
 if (!fs.existsSync(uploadDir)) {
@@ -48,7 +49,7 @@ router.get("/", authMiddleware, async (req, res) => {
       }
     }
 
-    query += " ORDER BY t.test_date DESC, t.id DESC";
+    query += " ORDER BY t.id ASC";
     const [testRows] = await pool.execute(query, params);
 
     // Fetch user submission results if student, or all submissions if admin
@@ -80,12 +81,8 @@ router.get("/", authMiddleware, async (req, res) => {
 // ===============================
 // CREATE / UPLOAD TEST
 // ===============================
-router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
+router.post("/", authMiddleware, authorizeRoles("admin", "teacher"), upload.single("file"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const { title, subjectId, batchId, instructions, totalMarks, testDate } = req.body;
     if (!title || !subjectId || !batchId || !totalMarks || !testDate) {
       if (req.file) fs.unlinkSync(req.file.path);
@@ -187,12 +184,8 @@ router.get("/view/:id", async (req, res) => {
 // ===============================
 // DELETE TEST
 // ===============================
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const [rows] = await pool.execute("SELECT file_path FROM tests WHERE id = ?", [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ message: "Test not found" });
@@ -217,12 +210,8 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 // ===============================
 // GET SUBMISSIONS FOR A TEST (ADMIN ONLY)
 // ===============================
-router.get("/:id/submissions", authMiddleware, async (req, res) => {
+router.get("/:id/submissions", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const [testRows] = await pool.execute("SELECT batch_id FROM tests WHERE id = ?", [req.params.id]);
     if (testRows.length === 0) return res.status(404).json({ message: "Test not found" });
 
@@ -269,12 +258,8 @@ router.get("/:id/submissions", authMiddleware, async (req, res) => {
 // ===============================
 // GRADE / UPDATE SCORE (ADMIN ONLY)
 // ===============================
-router.post("/grade", authMiddleware, async (req, res) => {
+router.post("/grade", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const { testId, studentId, score, status } = req.body;
     if (!testId || !studentId || score === undefined) {
       return res.status(400).json({ message: "Test ID, Student ID, and Score are required" });

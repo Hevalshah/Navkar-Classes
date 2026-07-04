@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Landing from "./Components/Landing";
 import Login from "./Components/Login";
+import AdminLogin from "./Components/AdminLogin";
+import ProtectedRoute from "./Components/ProtectedRoute";
 import StudentDashboard from "./Components/StudentDashboard";
 import AdminDashboard from "./Components/AdminDashboard";
 
@@ -29,11 +31,12 @@ function App() {
         {/* Core Auth & Dashboard Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/register" element={<Navigate to="/login" replace />} />
-        <Route path="/dashboard" element={<StudentDashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-        <Route path="/teacher-registration" element={<TeacherRegistration />} />
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/teacher-dashboard" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/teacher-registration" element={<ProtectedRoute allowedRoles={["admin"]}><TeacherRegistration /></ProtectedRoute>} />
 
         {/* Timetable Dropdown */}
         <Route path="/timetable" element={<Timetable />} />
@@ -50,9 +53,9 @@ function App() {
         <Route path="/materials" element={<Materials />} />
         <Route path="/tests" element={<Tests />} />
 
-        {/* Student Registration (Staff only) */}
-        <Route path="/student-registration" element={<StudentRegistration />} />
-        <Route path="/students" element={<StudentManagement />} />
+        {/* Student Registration */}
+        <Route path="/student-registration" element={<ProtectedRoute allowedRoles={["admin"]}><StudentRegistration /></ProtectedRoute>} />
+        <Route path="/students" element={<ProtectedRoute allowedRoles={["admin", "teacher"]}><StudentManagement /></ProtectedRoute>} />
 
         {/* Other Dropdown */}
         <Route path="/certificate-request" element={<CertificateRequest />} />

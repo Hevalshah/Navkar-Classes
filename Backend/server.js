@@ -50,6 +50,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Hook Routes
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/admin", require("./routes/adminAuthRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/materials", require("./routes/materialRoutes"));
 app.use("/api/tests", require("./routes/testRoutes"));
@@ -75,4 +76,3 @@ startServer().catch((error) => {
   console.error("Failed to start server:", error);
   process.exit(1);
 });
-

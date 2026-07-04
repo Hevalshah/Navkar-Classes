@@ -11,7 +11,7 @@ router.get("/", authMiddleware, async (req, res) => {
   try {
     if (req.user.role === "student") {
       const [rows] = await pool.execute(
-        "SELECT * FROM fee_records WHERE student_id = ? ORDER BY paid_date DESC, id DESC",
+        "SELECT * FROM fee_records WHERE student_id = ? ORDER BY id ASC",
         [req.user.id]
       );
       return res.json(rows);
@@ -24,7 +24,7 @@ router.get("/", authMiddleware, async (req, res) => {
       JOIN   users    u  ON f.student_id = u.id
       JOIN   students st ON st.user_id   = u.id
       LEFT JOIN batches b ON st.batch_id = b.id
-      ORDER BY f.paid_date DESC, f.id DESC
+      ORDER BY f.id ASC
     `);
     res.json(rows);
   } catch (err) {

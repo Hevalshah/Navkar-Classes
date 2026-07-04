@@ -42,6 +42,19 @@ export const getProfile = async (token) => {
   return res.json();
 };
 
+export const getAdminProfile = async (token) => {
+  const res = await fetch("http://localhost:5000/api/admin/profile", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch admin profile");
+  return res.json();
+};
+
 export const updateProfile = async (token, data) => {
   const res = await fetch("http://localhost:5000/api/auth/update-profile", {
     method: "PUT",
@@ -87,8 +100,54 @@ export const loginUser = async (data) => {
   return res.json();
 };
 
+export const loginAdmin = async (data) => {
+  const res = await fetch("http://localhost:5000/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) throw new Error();
+  return res.json();
+};
+
+export const refreshUserToken = async (refreshToken) => {
+  const res = await fetch("http://localhost:5000/api/auth/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken })
+  });
+
+  if (!res.ok) throw new Error();
+  return res.json();
+};
+
+export const refreshAdminToken = async (refreshToken) => {
+  const res = await fetch("http://localhost:5000/api/admin/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken })
+  });
+
+  if (!res.ok) throw new Error();
+  return res.json();
+};
+
 export const logoutUser = async (token) => {
   const res = await fetch("http://localhost:5000/api/auth/logout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) throw new Error();
+  return res.json();
+};
+
+export const logoutAdmin = async (token) => {
+  const res = await fetch("http://localhost:5000/api/admin/logout", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

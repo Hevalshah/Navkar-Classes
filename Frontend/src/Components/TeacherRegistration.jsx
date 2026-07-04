@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { getProfile, logoutUser } from "../Services/authService";
@@ -44,6 +44,22 @@ const TeacherRegistration = () => {
 
     const token = localStorage.getItem("token");
 
+    const loadTeachers = useCallback(async () => {
+        setLoadingTeachers(true);
+        try {
+            const res = await fetch("http://localhost:5000/api/admin/teachers", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setTeachers(await res.json());
+            }
+        } catch (err) {
+            console.error("Failed to load teachers", err);
+        } finally {
+            setLoadingTeachers(false);
+        }
+    }, [token]);
+
     useEffect(() => {
         const fetchProfile = async () => {
             const storedRole = localStorage.getItem("role") || "student";
@@ -72,23 +88,7 @@ const TeacherRegistration = () => {
         };
         fetchProfile();
         loadTeachers();
-    }, [navigate]);
-
-    const loadTeachers = async () => {
-        setLoadingTeachers(true);
-        try {
-            const res = await fetch("http://localhost:5000/api/admin/teachers", {
-                headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-            });
-            if (res.ok) {
-                setTeachers(await res.json());
-            }
-        } catch (err) {
-            console.error("Failed to load teachers", err);
-        } finally {
-            setLoadingTeachers(false);
-        }
-    };
+    }, [loadTeachers, navigate, token]);
 
     const handleLogout = async () => {
         try {
@@ -272,7 +272,7 @@ const TeacherRegistration = () => {
                                                         <div>
                                                             <strong>{teacher.name || teacher.fullName}</strong>
                                                             <div style={{ fontSize: "11px", color: "#a0aec0" }}>
-                                                                TCH-{String(teacher.id).slice(-6).toUpperCase()}
+                                                                Teacher {index + 1}
                                                             </div>
                                                         </div>
                                                     </div>

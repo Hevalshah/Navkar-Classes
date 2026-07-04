@@ -21,11 +21,10 @@ const Login = () => {
       const data = await loginUser({ email, password, role });
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
+      if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
 
       if (data.role === "student") {
         navigate("/dashboard");
-      } else if (data.role === "admin" || data.role === "staff") {
-        navigate("/admin-dashboard");
       } else if (data.role === "teacher") {
         navigate("/teacher-dashboard");
       }
@@ -89,16 +88,6 @@ const Login = () => {
             <div className="form-group role-group">
               <label className="input-label">Role</label>
               <div className="radio-options">
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="admin"
-                    checked={role === "admin"}
-                    onChange={() => setRole("admin")}
-                  />
-                  Staff
-                </label>
                 <label className="radio-label">
                   <input
                     type="radio"

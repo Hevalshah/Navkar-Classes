@@ -35,7 +35,7 @@ const findById = async (id) => {
 };
 
 const findAll = async () => {
-  const [rows] = await pool.execute("SELECT * FROM teachers ORDER BY id DESC");
+  const [rows] = await pool.execute("SELECT * FROM teachers ORDER BY id ASC");
   return rows.map(mapTeacher);
 };
 

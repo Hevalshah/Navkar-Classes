@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
-import { logoutUser, getProfile } from "../Services/authService";
+import { getAdminProfile, logoutAdmin } from "../Services/authService";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -42,7 +42,7 @@ const AdminDashboard = () => {
                 return;
             }
             try {
-                const userData = await getProfile(token);
+                const userData = await getAdminProfile(token);
                 setUser(userData);
             } catch (error) {
                 console.error("Failed to load user profile", error);
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
 
     const handleLogout = async () => {
         try {
-            if (token) await logoutUser(token);
+            if (token) await logoutAdmin(token);
         } catch (error) {
             console.error("Failed to record logout", error);
         } finally {
@@ -244,14 +244,14 @@ const AdminDashboard = () => {
                             <thead>
                                 {activeTab === "standards" && (
                                     <tr>
-                                        <th>ID</th>
+                                        <th>#</th>
                                         <th>Standard Name</th>
                                         <th>Actions</th>
                                     </tr>
                                 )}
                                 {activeTab === "batches" && (
                                     <tr>
-                                        <th>ID</th>
+                                        <th>#</th>
                                         <th>Batch Name</th>
                                         <th>Standard / Class</th>
                                         <th>Actions</th>
@@ -259,7 +259,7 @@ const AdminDashboard = () => {
                                 )}
                                 {activeTab === "subjects" && (
                                     <tr>
-                                        <th>ID</th>
+                                        <th>#</th>
                                         <th>Subject Name</th>
                                         <th>Standard / Class</th>
                                         <th>Actions</th>
@@ -267,9 +267,9 @@ const AdminDashboard = () => {
                                 )}
                             </thead>
                             <tbody>
-                                {activeTab === "standards" && standards.map((item) => (
+                                {activeTab === "standards" && standards.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{item.id}</td>
+                                        <td>{index + 1}</td>
                                         <td><strong>{item.name}</strong></td>
                                         <td>
                                             <button className="portal-btn outline-primary" style={{ padding: "4px 8px", fontSize: "12px", marginRight: "5px" }} onClick={() => openEditModal("standard", item)}>
@@ -281,9 +281,9 @@ const AdminDashboard = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {activeTab === "batches" && batches.map((item) => (
+                                {activeTab === "batches" && batches.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{item.id}</td>
+                                        <td>{index + 1}</td>
                                         <td><strong>{item.name}</strong></td>
                                         <td><span className="portal-badge info">{item.standard_name}</span></td>
                                         <td>
@@ -296,9 +296,9 @@ const AdminDashboard = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {activeTab === "subjects" && subjects.map((item) => (
+                                {activeTab === "subjects" && subjects.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{item.id}</td>
+                                        <td>{index + 1}</td>
                                         <td><strong>{item.name}</strong></td>
                                         <td><span className="portal-badge info">{item.standard_name}</span></td>
                                         <td>

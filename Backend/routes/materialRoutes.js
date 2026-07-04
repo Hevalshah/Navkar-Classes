@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 
 // Ensure uploads folder exists
@@ -65,7 +66,7 @@ router.get("/", authMiddleware, async (req, res) => {
       }
     }
 
-    query += " ORDER BY m.id DESC";
+    query += " ORDER BY m.id ASC";
     const [rows] = await pool.execute(query, params);
     res.json(rows);
   } catch (err) {
@@ -76,12 +77,8 @@ router.get("/", authMiddleware, async (req, res) => {
 // ===============================
 // CREATE / UPLOAD MATERIAL
 // ===============================
-router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
+router.post("/", authMiddleware, authorizeRoles("admin", "teacher"), upload.single("file"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const { title, description, subjectId, batchId } = req.body;
     if (!req.file) {
       return res.status(400).json({ message: "File upload is required" });
@@ -177,12 +174,8 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
 // ===============================
 // EDIT MATERIAL DETAILS
 // ===============================
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const { title, description, subjectId, batchId } = req.body;
     if (!title || !subjectId || !batchId) {
       return res.status(400).json({ message: "Title, Subject and Batch are required" });
@@ -202,12 +195,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
 // ===============================
 // DELETE MATERIAL
 // ===============================
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "staff" && req.user.role !== "teacher") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const [rows] = await pool.execute("SELECT file_path FROM materials WHERE id = ?", [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ message: "Material not found" });

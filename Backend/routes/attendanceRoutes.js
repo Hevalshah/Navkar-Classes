@@ -2,20 +2,15 @@ const express = require("express");
 const router = express.Router();
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 
-const isStaffUser = (req, res, next) => {
-  if (req.user && (req.user.role === "staff" || req.user.role === "admin" || req.user.role === "teacher")) {
-    next();
-  } else {
-    res.status(403).json({ message: "Access denied. Authorized roles only." });
-  }
-};
+const canManageAttendance = authorizeRoles("admin", "teacher");
 
 // ===============================
 // GET STUDENTS IN A BATCH
 // ===============================
-router.get("/students/:batchId", authMiddleware, isStaffUser, async (req, res) => {
+router.get("/students/:batchId", authMiddleware, canManageAttendance, async (req, res) => {
   try {
     const [rows] = await pool.execute(
       `SELECT u.id, st.name, u.email, st.mobile
@@ -34,7 +29,7 @@ router.get("/students/:batchId", authMiddleware, isStaffUser, async (req, res) =
 // ===============================
 // SUBMIT ATTENDANCE (ADMIN/STAFF ONLY)
 // ===============================
-router.post("/submit", authMiddleware, isStaffUser, async (req, res) => {
+router.post("/submit", authMiddleware, canManageAttendance, async (req, res) => {
   const { batchId, date, attendanceData } = req.body; // attendanceData is array of { studentId, status }
   if (!batchId || !date || !attendanceData || !Array.isArray(attendanceData)) {
     return res.status(400).json({ message: "Batch, Date, and Attendance List are required" });
@@ -111,13 +106,13 @@ router.get("/history", authMiddleware, async (req, res) => {
          FROM attendance a 
          JOIN batches b ON a.batch_id = b.id
          WHERE a.student_id = ? 
-         ORDER BY a.date DESC`,
+         ORDER BY a.id ASC`,
         [req.user.id]
       );
       return res.json(rows);
     }
 
-    // Admin/Staff: fetch logs by batch and/or date
+    // Administrator/faculty: fetch logs by batch and/or date
     const { batchId, date } = req.query;
     if (!batchId) {
       return res.status(400).json({ message: "Batch ID is required for administrative query" });
@@ -137,7 +132,7 @@ router.get("/history", authMiddleware, async (req, res) => {
       params.push(date);
     }
 
-    query += " ORDER BY a.date DESC, u.name ASC";
+    query += " ORDER BY a.id ASC";
     const [rows] = await pool.execute(query, params);
     res.json(rows);
   } catch (err) {

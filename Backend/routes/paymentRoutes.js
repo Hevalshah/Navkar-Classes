@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 
 // Instantiate Razorpay client
@@ -19,12 +20,8 @@ const razorpay = new Razorpay({
 // ===============================
 // CREATE PAYMENT ORDER
 // ===============================
-router.post("/create-order", authMiddleware, async (req, res, next) => {
+router.post("/create-order", authMiddleware, authorizeRoles("student"), async (req, res, next) => {
   try {
-    if (req.user.role !== "student") {
-      return res.status(403).json({ message: "Only students can make payments." });
-    }
-
     // 1. Fetch total fee from students table
     const [studentRows] = await pool.execute(
       "SELECT total_fee FROM students WHERE user_id = ? LIMIT 1",

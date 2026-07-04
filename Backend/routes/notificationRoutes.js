@@ -70,7 +70,7 @@ const getNotificationsForUser = async (req, roleOverride) => {
          ON nr.notification_id = n.id AND nr.user_id = ?
        WHERE n.role = ?
          AND (n.user_id IS NULL OR n.user_id = ?)
-       ORDER BY n.created_at DESC, n.id DESC
+       ORDER BY n.id ASC
        LIMIT 30`;
   const params = [userId, normalizedRole, userId];
 
@@ -137,7 +137,7 @@ router.get("/unread", authMiddleware, async (req, res) => {
        WHERE n.role = ?
          AND (n.user_id IS NULL OR n.user_id = ?)
          AND nr.id IS NULL
-       ORDER BY n.created_at DESC, n.id DESC
+       ORDER BY n.id ASC
        LIMIT 30`,
       [userId, role, userId]
     );

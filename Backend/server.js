@@ -1,14 +1,15 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const { connectDB } = require("./config/db");
 const { xssProtection, errorMiddleware } = require("./middleware/securityMiddleware");
+const contactRoutes = require("./routes/contactRoutes");
 
 // Environment variable validation
-const requiredEnv = ["PORT", "JWT_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"];
+const requiredEnv = ["PORT", "JWT_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "OFFICE_EMAIL"];
 requiredEnv.forEach((env) => {
   if (!process.env[env]) {
     console.warn(`[Warning] Required environment variable "${env}" is missing.`);
@@ -58,7 +59,7 @@ app.use("/api/timetable", require("./routes/timetableRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/fees", require("./routes/feeRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use("/api/contact", require("./routes/contactRoutes"));
+app.use("/api/contact", contactRoutes);
 app.use("/api/payments", require("./routes/paymentRoutes"));
 
 // Global error handler
@@ -66,6 +67,7 @@ app.use(errorMiddleware);
 
 const startServer = async () => {
   await connectDB();
+  await contactRoutes.verifySmtpConnection();
 
   app.listen(process.env.PORT, () =>
     console.log(`Server running on port ${process.env.PORT}`)

@@ -305,7 +305,7 @@ const Landing = () => {
                                 </div>
                                 <div className="contact-method-text">
                                     <h4>Email Address</h4>
-                                    <p>info@navkarclasses.com</p>
+                                    <p>designerweb496@gmail.com</p>
                                 </div>
                             </div>
                         </div>

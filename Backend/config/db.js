@@ -340,6 +340,19 @@ const connectDB = async () => {
     )
   `);
 
+  await pool.query(`
+    DELETE nr FROM notification_reads nr
+    LEFT JOIN notifications n ON nr.notification_id = n.id
+    WHERE n.id IS NULL
+  `);
+
+  await pool.query(`
+    DELETE FROM notifications
+    WHERE (role = 'student' AND user_id IS NULL)
+       OR (role = 'student' AND user_id NOT IN (SELECT id FROM users WHERE role = 'student'))
+       OR (role = 'teacher' AND user_id IS NOT NULL AND user_id NOT IN (SELECT id FROM teachers))
+  `);
+
   // Create payments table
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (

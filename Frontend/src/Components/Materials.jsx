@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { getProfile, logoutUser } from "../Services/authService";
@@ -83,17 +83,17 @@ const StudentMaterials = ({ user, handleLogout }) => {
     const token = localStorage.getItem("token");
 
     // Fetch student materials
-    const fetchMaterials = async () => {
+    const fetchMaterials = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/materials", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setMaterials(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     // Fetch subjects list
-    const fetchSubjects = async () => {
+    const fetchSubjects = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/admin/subjects");
             if (res.ok) {
@@ -105,12 +105,12 @@ const StudentMaterials = ({ user, handleLogout }) => {
                 }
             }
         } catch (e) { console.error(e); }
-    };
+    }, [user]);
 
     useEffect(() => {
         fetchMaterials();
         fetchSubjects();
-    }, [user]);
+    }, [fetchMaterials, fetchSubjects]);
 
     const filteredMaterials = materials.filter(item => {
         return selectedSubject === "All" || item.subject_id === parseInt(selectedSubject);
@@ -275,20 +275,20 @@ const StaffMaterials = ({ user, handleLogout, role }) => {
         } catch (e) { console.error(e); }
     };
 
-    const loadMaterials = async () => {
+    const loadMaterials = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/materials", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setMaterials(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         loadSubjects();
         loadBatches();
         loadMaterials();
-    }, []);
+    }, [loadMaterials]);
 
     const handleDrag = (e) => {
         e.preventDefault();

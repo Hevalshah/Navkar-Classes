@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { getProfile, logoutUser } from "../Services/authService";
@@ -11,18 +11,18 @@ const StudentTests = ({ user, handleLogout }) => {
     const [tests, setTests] = useState([]);
     const token = localStorage.getItem("token");
 
-    const fetchTests = async () => {
+    const fetchTests = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/tests", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setTests(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchTests();
-    }, []);
+    }, [fetchTests]);
 
     const activeTests = tests.filter(t => t.submissionStatus === "Pending");
     const completedTests = tests.filter(t => t.submissionStatus === "Graded" || t.score !== "N/A");
@@ -170,7 +170,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
         } catch (e) { console.error(e); }
     };
 
-    const loadTests = async () => {
+    const loadTests = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/tests", {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -183,9 +183,9 @@ const StaffTests = ({ user, handleLogout, role }) => {
                 }
             }
         } catch (e) { console.error(e); }
-    };
+    }, [selectedTestId, token]);
 
-    const loadSubmissions = async () => {
+    const loadSubmissions = useCallback(async () => {
         if (!selectedTestId) return;
         try {
             const res = await fetch(`http://localhost:5000/api/tests/${selectedTestId}/submissions`, {
@@ -193,17 +193,17 @@ const StaffTests = ({ user, handleLogout, role }) => {
             });
             if (res.ok) setSubmissions(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [selectedTestId, token]);
 
     useEffect(() => {
         loadSubjects();
         loadBatches();
         loadTests();
-    }, []);
+    }, [loadTests]);
 
     useEffect(() => {
         loadSubmissions();
-    }, [selectedTestId]);
+    }, [loadSubmissions]);
 
     const handleAdd = () => {
         setFormData({ id: null, title: "", subjectId: "", batchId: "", totalMarks: "", testDate: "", instructions: "" });

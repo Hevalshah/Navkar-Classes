@@ -50,7 +50,7 @@ const StudentDashboard = () => {
 
             <div className="dashboard-main-container">
                 <div className="dashboard-header-title">
-                    <h2>Dashboard <span className="student-name-light">{user ? user.name : "Loading..."}</span></h2>
+                    <h2>Student Dashboard <span className="student-name-light">{user ? user.name : "Loading..."}</span></h2>
                 </div>
 
                 <div className="dashboard-grid">

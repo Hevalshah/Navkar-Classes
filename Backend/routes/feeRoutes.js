@@ -4,6 +4,18 @@ const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 
+const notifyAllTeachers = async ({ message, type, referenceId, uniqueKeyPrefix }) => {
+  await insertNotification({
+    title:   message,
+    message,
+    type,
+    role:    "teacher",
+    userId:  null,
+    referenceId,
+    uniqueKey: `teacher:all:${uniqueKeyPrefix}:${referenceId}`
+  });
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/fees  — fetch fee records
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,13 +93,11 @@ router.post("/pay", authMiddleware, async (req, res) => {
 
     // ── 4. Notify teachers ───────────────────────────────────────────────────
     const teacherMessage = `${studentName} paid ${amtDisplay} via ${payMode}`;
-    await insertNotification({
-      title:      teacherMessage,
-      message:    teacherMessage,
-      type:       "fee",
-      role:       "teacher",
+    await notifyAllTeachers({
+      message: teacherMessage,
+      type: "fee",
       referenceId: feeId,
-      uniqueKey:  `teacher:fee-collected:${ts}`
+      uniqueKeyPrefix: "fee-collected"
     });
 
     // ── 5. Notify admin ──────────────────────────────────────────────────────

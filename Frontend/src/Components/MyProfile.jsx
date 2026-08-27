@@ -58,18 +58,6 @@ const MyProfile = () => {
         const storedRole = localStorage.getItem("role") || "student";
         setRole(storedRole);
 
-        const savedUserStr = localStorage.getItem("editedUser");
-        if (savedUserStr) {
-            try {
-                const parsed = JSON.parse(savedUserStr);
-                setUser(parsed);
-                initForm(parsed);
-                return;
-            } catch (e) {
-                console.error("Failed to parse saved user", e);
-            }
-        }
-
         const token = localStorage.getItem("token");
         if (!token) {
             const guestUser = { ...defaultMockUser, role: storedRole, name: storedRole === "student" ? "John Doe" : "Test Admin" };
@@ -80,10 +68,19 @@ const MyProfile = () => {
 
         try {
             const apiUser = await getProfile(token);
+            const userId = apiUser.id ?? apiUser._id;
+            // Load saved profile picture for THIS user only
+            let savedProfileImg = null;
+            if (userId) {
+                try {
+                    savedProfileImg = localStorage.getItem(`profileImg_${userId}`);
+                } catch (_) {}
+            }
             const mergedUser = {
                 ...defaultMockUser,
                 ...apiUser,
-                id: apiUser.id ?? apiUser._id ?? defaultMockUser.id
+                id: userId ?? defaultMockUser.id,
+                profileImg: savedProfileImg || apiUser.profileImg || defaultMockUser.profileImg
             };
             setUser(mergedUser);
             initForm(mergedUser);
@@ -120,7 +117,6 @@ const MyProfile = () => {
         } finally {
             localStorage.removeItem("token");
             localStorage.removeItem("role");
-            localStorage.removeItem("editedUser");
             navigate("/");
         }
     };
@@ -278,7 +274,11 @@ const MyProfile = () => {
             profileImg: croppedBase64
         };
         setUser(updatedUser);
-        localStorage.setItem("editedUser", JSON.stringify(updatedUser));
+        // Save under user-specific key so images never cross accounts
+        const userId = user?.id ?? user?._id;
+        if (userId) {
+            localStorage.setItem(`profileImg_${userId}`, croppedBase64);
+        }
         
         setIsPhotoModalOpen(false);
         alert("Profile picture cropped successfully!");
@@ -292,7 +292,10 @@ const MyProfile = () => {
                 profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             };
             setUser(updatedUser);
-            localStorage.setItem("editedUser", JSON.stringify(updatedUser));
+            const userId = user?.id ?? user?._id;
+            if (userId) {
+                localStorage.removeItem(`profileImg_${userId}`);
+            }
             alert("Profile picture removed!");
             setIsPhotoModalOpen(false);
         }
@@ -332,8 +335,10 @@ const MyProfile = () => {
                 address: editAddress
             });
             const apiUser = data.user || updatedUser;
-            setUser({ ...updatedUser, ...apiUser });
-            localStorage.removeItem("editedUser");
+            const merged = { ...updatedUser, ...apiUser };
+            // Preserve the current profile picture (stored per-user key, not affected here)
+            merged.profileImg = user?.profileImg || merged.profileImg;
+            setUser(merged);
             setIsEditOpen(false);
             alert("Profile details successfully updated!");
         } catch (error) {

@@ -5,6 +5,12 @@ import { getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
+const fallbackUser = {
+    name: "Student (Demo Mode)",
+    role: "student",
+    profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+};
+
 const Feedback = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -15,12 +21,6 @@ const Feedback = () => {
     const [rating, setRating] = useState(5);
     const [hoverRating, setHoverRating] = useState(0);
     const [comments, setComments] = useState("");
-
-    const fallbackUser = {
-        name: "Student (Demo Mode)",
-        role: "student",
-        profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-    };
 
     // Simulated feedback list in local state
     const [feedbackLogs, setFeedbackLogs] = useState([

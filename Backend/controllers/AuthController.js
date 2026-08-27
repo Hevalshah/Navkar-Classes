@@ -6,20 +6,22 @@ const { issueTokens, verifyRefreshToken } = require("../services/tokenService");
 const publicLogin = async (req, res) => {
   try {
     const { email, password, role } = req.body;
+    const identifier = String(email || "").trim();
+    const normalizedRole = String(role || "").toLowerCase();
 
-    if (!["teacher", "student"].includes(role)) {
+    if (!["teacher", "student"].includes(normalizedRole)) {
       return res.status(403).json({ message: "This login page is only for teachers and students." });
     }
 
     let account;
-    if (role === "teacher") {
-      account = await Teacher.findByEmail(email);
+    if (normalizedRole === "teacher") {
+      account = await Teacher.findByEmail(identifier);
       if (!account || account.status !== "Active") {
         return res.status(400).json({ message: "Invalid credentials" });
       }
       account = { ...account, role: "teacher", username: account.email };
     } else {
-      account = await User.findByEmailAndRole(email, "student");
+      account = await User.findByEmailAndRole(identifier, "student");
     }
 
     if (!account) {
@@ -31,7 +33,7 @@ const publicLogin = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    if (role === "student") {
+    if (normalizedRole === "student") {
       await User.updateLastLogin(account.id);
     }
 

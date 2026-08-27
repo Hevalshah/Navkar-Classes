@@ -7,6 +7,18 @@ const authMiddleware = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 
+const notifyAllTeachers = async ({ message, type, referenceId, uniqueKeyPrefix }) => {
+  await insertNotification({
+    title:   message,
+    message,
+    type,
+    role:    "teacher",
+    userId:  null,
+    referenceId,
+    uniqueKey: `teacher:all:${uniqueKeyPrefix}:${referenceId}`
+  });
+};
+
 // Instantiate Razorpay client
 // Using fallback credentials for clean boot if not defined in .env yet
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder";
@@ -156,13 +168,11 @@ router.post("/verify", authMiddleware, async (req, res, next) => {
         uniqueKey: `staff:fee-collected:${feeId}`
       });
       const teacherMessage = `${studentName} paid ${amtDisplay} via Razorpay`;
-      await insertNotification({
-        title:   teacherMessage,
+      await notifyAllTeachers({
         message: teacherMessage,
-        type:    "fee",
-        role:    "teacher",
+        type: "fee",
         referenceId: feeId,
-        uniqueKey: `teacher:fee-collected:${feeId}`
+        uniqueKeyPrefix: "fee-collected"
       });
     }
 

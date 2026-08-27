@@ -6,18 +6,18 @@ import logo from "../assets/navkar-logo.png";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
+const fallbackUser = {
+    id: "STU654321",
+    name: "John Doe",
+    role: "student",
+    profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+    batch: "Standard 10 - Batch A"
+};
+
 const Result = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [selectedTerm, setSelectedTerm] = useState("MID-2025");
-
-    const fallbackUser = {
-        id: "STU654321",
-        name: "John Doe",
-        role: "student",
-        profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        batch: "Standard 10 - Batch A"
-    };
 
     const termsList = [
         { id: "MID-2025", name: "Mid-Semester Examination - September 2025" },

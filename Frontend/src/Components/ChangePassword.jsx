@@ -5,6 +5,12 @@ import { changePassword, getProfile, logoutUser } from "../Services/authService"
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
+const fallbackUser = {
+    name: "Student (Demo Mode)",
+    role: "student",
+    profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+};
+
 const ChangePassword = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -20,12 +26,6 @@ const ChangePassword = () => {
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-
-    const fallbackUser = {
-        name: "Student (Demo Mode)",
-        role: "student",
-        profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-    };
 
     useEffect(() => {
         const fetchProfile = async () => {

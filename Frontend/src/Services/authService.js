@@ -39,7 +39,15 @@ export const getProfile = async (token) => {
   });
 
   if (!res.ok) throw new Error("Failed to fetch profile");
-  return res.json();
+  const userData = await res.json();
+  const userId = userData.id ?? userData._id;
+  if (userId) {
+    const savedImg = localStorage.getItem(`profileImg_${userId}`);
+    if (savedImg) {
+      userData.profileImg = savedImg;
+    }
+  }
+  return userData;
 };
 
 export const getAdminProfile = async (token) => {

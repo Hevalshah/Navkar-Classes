@@ -117,7 +117,7 @@ const Login = () => {
               <div className="input-wrapper">
                 <i className="fas fa-user input-icon"></i>
                 <input
-                  type="email"
+                  type="text"
                   className="form-input with-icon"
                   onChange={(e) => setEmail(e.target.value)}
                 />

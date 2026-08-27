@@ -210,6 +210,8 @@ router.put("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
 
 router.delete("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
   try {
+    await pool.execute("DELETE FROM notification_reads WHERE user_id = ?", [req.params.id]);
+    await pool.execute("DELETE FROM notifications WHERE role = 'teacher' AND user_id = ?", [req.params.id]);
     await Teacher.remove(parseInt(req.params.id));
     res.json({ message: "Teacher deleted successfully" });
   } catch (err) {
@@ -371,6 +373,8 @@ router.put("/students/:id", authMiddleware, studentManager, async (req, res) => 
 
 router.delete("/students/:id", authMiddleware, studentManager, async (req, res) => {
   try {
+    await pool.execute("DELETE FROM notification_reads WHERE user_id = ?", [req.params.id]);
+    await pool.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [req.params.id]);
     const [result] = await pool.execute(
       "DELETE FROM users WHERE id = ? AND role = 'student'",
       [req.params.id]

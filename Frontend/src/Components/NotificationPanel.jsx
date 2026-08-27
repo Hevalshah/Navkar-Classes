@@ -40,7 +40,6 @@ const NotificationPanel = () => {
       });
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
-      console.log("Notifications API Response", data);
       setNotifications(data.map((n) => ({
         id:      n.id,
         title:   n.title,
@@ -185,7 +184,7 @@ const NotificationPanel = () => {
           })
         ) : (
           <div className="no-record">
-            <i className="fas fa-exclamation-circle" /> No Record Found
+            <i className="fas fa-exclamation-circle" /> No new notifications
           </div>
         )}
       </div>

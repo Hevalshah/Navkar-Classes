@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { getProfile, logoutUser } from "../Services/authService";
@@ -11,18 +11,18 @@ const StudentTimetable = ({ user, handleLogout }) => {
     const [lectures, setLectures] = useState([]);
     const token = localStorage.getItem("token");
 
-    const fetchTimetable = async () => {
+    const fetchTimetable = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/timetable", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setLectures(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         fetchTimetable();
-    }, []);
+    }, [fetchTimetable]);
 
     const days = ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -141,14 +141,14 @@ const StaffTimetable = ({ user, handleLogout, role }) => {
         } catch (e) { console.error(e); }
     };
 
-    const loadSchedules = async () => {
+    const loadSchedules = useCallback(async () => {
         try {
             const res = await fetch("http://localhost:5000/api/timetable", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setSchedules(await res.json());
         } catch (e) { console.error(e); }
-    };
+    }, [token]);
 
     useEffect(() => {
         loadStandards();
@@ -156,7 +156,7 @@ const StaffTimetable = ({ user, handleLogout, role }) => {
         loadSubjects();
         loadTeachers();
         loadSchedules();
-    }, []);
+    }, [loadSchedules]);
 
     const days = ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     

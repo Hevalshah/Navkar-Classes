@@ -58,25 +58,32 @@ const SELECT_USER_QUERY = `
   LEFT JOIN batches b ON st.batch_id = b.id
 `;
 
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+const normalizeIdentifier = (value) => {
+  const identifier = String(value || "").trim();
+  return identifier.includes("@") ? identifier.toLowerCase() : identifier;
+};
+
 const findByEmail = async (email) => {
-  const [rows] = await pool.execute(`${SELECT_USER_QUERY} WHERE u.email = ? LIMIT 1`, [email]);
+  const [rows] = await pool.execute(`${SELECT_USER_QUERY} WHERE LOWER(u.email) = ? LIMIT 1`, [normalizeEmail(email)]);
   return mapUser(rows[0]);
 };
 
 const findByUsername = async (username) => {
-  const [rows] = await pool.execute(`${SELECT_USER_QUERY} WHERE u.username = ? LIMIT 1`, [username]);
+  const [rows] = await pool.execute(`${SELECT_USER_QUERY} WHERE u.username = ? LIMIT 1`, [String(username || "").trim()]);
   return mapUser(rows[0]);
 };
 
 const findByEmailAndRole = async (emailOrUsername, role) => {
+  const identifier = normalizeIdentifier(emailOrUsername);
   const [rows] = await pool.execute(
     `${SELECT_USER_QUERY}
-     WHERE (u.email = ? OR u.username = ?)
+     WHERE (LOWER(u.email) = ? OR u.username = ?)
        AND u.role = ?
        AND u.is_active = TRUE
        AND (u.role <> 'student' OR st.is_active = TRUE)
      LIMIT 1`,
-    [emailOrUsername, emailOrUsername, role]
+    [identifier.toLowerCase(), identifier, role]
   );
   return mapUser(rows[0]);
 };
@@ -105,7 +112,7 @@ const create = async ({ name, parentName, mobile, email, username, password, rol
     const [result] = await connection.execute(
       `INSERT INTO users (name, email, username, password, role)
        VALUES (?, ?, ?, ?, ?)`,
-      [name, email, username || null, password, role]
+      [String(name || "").trim(), normalizeEmail(email), username ? String(username).trim() : null, password, role]
     );
 
     if (role === "student") {
@@ -116,7 +123,7 @@ const create = async ({ name, parentName, mobile, email, username, password, rol
          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           result.insertId,
-          name,
+          String(name || "").trim(),
           parentName || null,
           mobile || null,
           address || null,
@@ -144,13 +151,13 @@ const updateProfile = async (id, { name, mobile, parentName, email, address, use
     `UPDATE users 
      SET name = ?, email = ?, username = ?
      WHERE id = ?`,
-    [name, email, username || null, id]
+    [String(name || "").trim(), normalizeEmail(email), username ? String(username).trim() : null, id]
   );
   await pool.execute(
     `UPDATE students
      SET name = ?, mobile = ?, parent_name = ?, address = ?
      WHERE user_id = ?`,
-    [name, mobile || null, parentName || null, address || null, id]
+    [String(name || "").trim(), mobile || null, parentName || null, address || null, id]
   );
   return findById(id);
 };

@@ -24,8 +24,10 @@ const publicTeacher = (teacher) => {
   return safeTeacher;
 };
 
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
 const findByEmail = async (email) => {
-  const [rows] = await pool.execute("SELECT * FROM teachers WHERE email = ? LIMIT 1", [email]);
+  const [rows] = await pool.execute("SELECT * FROM teachers WHERE LOWER(email) = ? LIMIT 1", [normalizeEmail(email)]);
   return mapTeacher(rows[0]);
 };
 
@@ -42,7 +44,7 @@ const findAll = async () => {
 const create = async ({ name, email, mobile, password, status = "Active" }) => {
   const [result] = await pool.execute(
     "INSERT INTO teachers (name, email, mobile, password, status) VALUES (?, ?, ?, ?, ?)",
-    [name, email, mobile, password, status]
+    [String(name || "").trim(), normalizeEmail(email), mobile, password, status]
   );
   return findById(result.insertId);
 };
@@ -51,12 +53,12 @@ const update = async (id, { name, email, mobile, password, status }) => {
   if (password) {
     await pool.execute(
       "UPDATE teachers SET name = ?, email = ?, mobile = ?, password = ?, status = ? WHERE id = ?",
-      [name, email, mobile, password, status, id]
+      [String(name || "").trim(), normalizeEmail(email), mobile, password, status, id]
     );
   } else {
     await pool.execute(
       "UPDATE teachers SET name = ?, email = ?, mobile = ?, status = ? WHERE id = ?",
-      [name, email, mobile, status, id]
+      [String(name || "").trim(), normalizeEmail(email), mobile, status, id]
     );
   }
   return findById(id);

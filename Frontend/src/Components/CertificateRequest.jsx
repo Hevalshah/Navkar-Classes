@@ -5,6 +5,12 @@ import { getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
+const fallbackUser = {
+    name: "Student (Demo Mode)",
+    role: "student",
+    profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+};
+
 const CertificateRequest = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -13,12 +19,6 @@ const CertificateRequest = () => {
     // Form Inputs
     const [certType, setCertType] = useState("Bonafide Certificate");
     const [reason, setReason] = useState("");
-
-    const fallbackUser = {
-        name: "Student (Demo Mode)",
-        role: "student",
-        profileImg: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-    };
 
     // State list of requests (interactively mutable)
     const [requestsList, setRequestsList] = useState([

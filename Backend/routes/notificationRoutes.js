@@ -3,22 +3,27 @@ const router  = express.Router();
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 
+const requiresOwner = (role) => role === "student";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED helper – exported so other route files can use it
 // ─────────────────────────────────────────────────────────────────────────────
 const insertNotification = async ({ title, message, type, role, userId, referenceId, uniqueKey }) => {
   try {
+    const normalizedRole = String(role || "").toLowerCase();
+    if (requiresOwner(normalizedRole) && !userId) return;
+
     const notification = {
       title,
       message: message || title,
       type,
-      role,
+      role: normalizedRole,
       userId: userId || null,
       referenceId: referenceId || null,
       uniqueKey
     };
 
-    const [result] = await pool.execute(
+    await pool.execute(
       `INSERT IGNORE INTO notifications
         (title, message, type, role, user_id, reference_id, unique_key, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -33,11 +38,6 @@ const insertNotification = async ({ title, message, type, role, userId, referenc
       ]
     );
 
-    console.log("Notification Created", {
-      ...notification,
-      insertId: result.insertId,
-      affectedRows: result.affectedRows
-    });
   } catch (err) {
     // Never crash a business transaction because of a notification failure
     console.error("[Notification] insert error:", err.message);
@@ -55,10 +55,25 @@ const getNotificationsForUser = async (req, roleOverride) => {
     throw error;
   }
 
+  let roleClause;
+  let params;
+
+  if (normalizedRole === "student") {
+    roleClause = "n.role = 'student' AND n.user_id = ?";
+    params = [userId, userId];
+  } else if (normalizedRole === "teacher") {
+    roleClause = "((n.role = 'teacher' AND n.type <> 'fee') OR (n.role = 'student' AND n.type = 'fee'))";
+    params = [userId];
+  } else {
+    const ownerClause = "(n.user_id IS NULL OR n.user_id = ?)";
+    roleClause = `n.role = ? AND ${ownerClause}`;
+    params = [userId, normalizedRole, userId];
+  }
+
   const query = `SELECT
          n.id,
-         n.title,
-         n.message,
+         IF(n.role = 'student' AND n.type = 'fee', 'Fee Payment Recorded', n.title) AS title,
+         IF(n.role = 'student' AND n.type = 'fee', CONCAT(u.name, ' paid ', REPLACE(n.message, 'Fees paid successfully: ', '')), n.message) AS message,
          n.type,
          n.role,
          n.user_id,
@@ -66,17 +81,15 @@ const getNotificationsForUser = async (req, roleOverride) => {
          n.created_at,
          (nr.id IS NOT NULL) AS is_read
        FROM notifications n
+       LEFT JOIN users u ON n.user_id = u.id
        LEFT JOIN notification_reads nr
          ON nr.notification_id = n.id AND nr.user_id = ?
-       WHERE n.role = ?
-         AND (n.user_id IS NULL OR n.user_id = ?)
+       WHERE ${roleClause}
+         AND n.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
        ORDER BY n.id ASC
        LIMIT 30`;
-  const params = [userId, normalizedRole, userId];
 
-  console.log("[Notification] Query", { role: normalizedRole, userId, query, params });
   const [rows] = await pool.execute(query, params);
-  console.log("Notifications Returned", rows);
   return rows;
 };
 
@@ -119,12 +132,27 @@ router.get("/teacher", authMiddleware, async (req, res) => {
 router.get("/unread", authMiddleware, async (req, res) => {
   try {
     const { id: userId, role } = req.user;
+    
+    let roleClause;
+    let params;
+
+    if (role === "student") {
+      roleClause = "n.role = 'student' AND n.user_id = ?";
+      params = [userId, userId];
+    } else if (role === "teacher") {
+      roleClause = "((n.role = 'teacher' AND n.type <> 'fee') OR (n.role = 'student' AND n.type = 'fee'))";
+      params = [userId];
+    } else {
+      const ownerClause = "(n.user_id IS NULL OR n.user_id = ?)";
+      roleClause = `n.role = ? AND ${ownerClause}`;
+      params = [userId, role, userId];
+    }
 
     const [rows] = await pool.execute(
       `SELECT
          n.id,
-         n.title,
-         n.message,
+         IF(n.role = 'student' AND n.type = 'fee', 'Fee Payment Recorded', n.title) AS title,
+         IF(n.role = 'student' AND n.type = 'fee', CONCAT(u.name, ' paid ', REPLACE(n.message, 'Fees paid successfully: ', '')), n.message) AS message,
          n.type,
          n.role,
          n.user_id,
@@ -132,14 +160,15 @@ router.get("/unread", authMiddleware, async (req, res) => {
          n.created_at,
          FALSE AS is_read
        FROM notifications n
+       LEFT JOIN users u ON n.user_id = u.id
        LEFT JOIN notification_reads nr
          ON nr.notification_id = n.id AND nr.user_id = ?
-       WHERE n.role = ?
-         AND (n.user_id IS NULL OR n.user_id = ?)
+       WHERE ${roleClause}
+         AND n.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
          AND nr.id IS NULL
        ORDER BY n.id ASC
        LIMIT 30`,
-      [userId, role, userId]
+      params
     );
 
     res.json(rows);
@@ -157,12 +186,28 @@ router.get("/unread", authMiddleware, async (req, res) => {
 router.put("/read-all", authMiddleware, async (req, res) => {
   try {
     const { id: userId, role } = req.user;
+
+    let roleClause;
+    let params;
+
+    if (role === "student") {
+      roleClause = "role = 'student' AND user_id = ?";
+      params = [userId, userId];
+    } else if (role === "teacher") {
+      roleClause = "((role = 'teacher' AND type <> 'fee') OR (role = 'student' AND type = 'fee'))";
+      params = [userId];
+    } else {
+      const ownerClause = "(user_id IS NULL OR user_id = ?)";
+      roleClause = `role = ? AND ${ownerClause}`;
+      params = [userId, role, userId];
+    }
+
     await pool.execute(
       `INSERT IGNORE INTO notification_reads (notification_id, user_id)
        SELECT id, ?
        FROM notifications
-       WHERE role = ? AND (user_id IS NULL OR user_id = ?)`,
-      [userId, role, userId]
+       WHERE ${roleClause} AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
+      params
     );
     res.json({ message: "All notifications marked as read" });
   } catch (err) {
@@ -176,12 +221,29 @@ router.put("/read-all", authMiddleware, async (req, res) => {
 router.put("/:id/read", authMiddleware, async (req, res) => {
   try {
     const { id: userId, role } = req.user;
+    const notificationId = req.params.id;
+
+    let roleClause;
+    let params;
+
+    if (role === "student") {
+      roleClause = "role = 'student' AND user_id = ?";
+      params = [userId, notificationId, userId];
+    } else if (role === "teacher") {
+      roleClause = "((role = 'teacher' AND type <> 'fee') OR (role = 'student' AND type = 'fee'))";
+      params = [userId, notificationId];
+    } else {
+      const ownerClause = "(user_id IS NULL OR user_id = ?)";
+      roleClause = `role = ? AND ${ownerClause}`;
+      params = [userId, notificationId, role, userId];
+    }
+
     await pool.execute(
       `INSERT IGNORE INTO notification_reads (notification_id, user_id)
        SELECT id, ?
        FROM notifications
-       WHERE id = ? AND role = ? AND (user_id IS NULL OR user_id = ?)`,
-      [userId, req.params.id, role, userId]
+       WHERE id = ? AND ${roleClause} AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
+      params
     );
     res.json({ message: "Notification marked as read" });
   } catch (err) {

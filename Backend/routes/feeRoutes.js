@@ -2,9 +2,10 @@ const express  = require("express");
 const router   = express.Router();
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
 
-const notifyAllTeachers = async ({ message, type, referenceId, uniqueKeyPrefix }) => {
+const notifyAllTeachers = async ({ message, type, referenceId, uniqueKeyPrefix, connection }) => {
   await insertNotification({
     title:   message,
     message,
@@ -12,14 +13,15 @@ const notifyAllTeachers = async ({ message, type, referenceId, uniqueKeyPrefix }
     role:    "teacher",
     userId:  null,
     referenceId,
-    uniqueKey: `teacher:all:${uniqueKeyPrefix}:${referenceId}`
+    uniqueKey: `teacher:all:${uniqueKeyPrefix}:${referenceId}`,
+    connection
   });
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/fees  — fetch fee records
 // ─────────────────────────────────────────────────────────────────────────────
-router.get("/", authMiddleware, async (req, res) => {
+router.get("/", authMiddleware, authorizeRoles("admin", "staff", "teacher", "student"), async (req, res) => {
   try {
     if (req.user.role === "student") {
       const [rows] = await pool.execute(
@@ -40,27 +42,29 @@ router.get("/", authMiddleware, async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching fee records", error: err.message });
+    res.status(500).json({ message: "Error fetching fee records" });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/fees/pay  — record a fee payment and fire notifications
 // ─────────────────────────────────────────────────────────────────────────────
-router.post("/pay", authMiddleware, async (req, res) => {
+router.post("/pay", authMiddleware, authorizeRoles("admin", "staff"), async (req, res) => {
   const { studentId, amount, paymentMode, referenceNo } = req.body;
 
-  // Student pays own fee; Admin/Staff pay on behalf of any student
-  const targetStudentId = req.user.role === "student" ? req.user.id : studentId;
+  const targetStudentId = studentId;
   const payMode         = paymentMode || "Online";
 
   if (!amount || !targetStudentId) {
     return res.status(400).json({ message: "Amount and Student ID are required fields" });
   }
 
+  let connection;
   try {
     // ── 1. Record the payment ────────────────────────────────────────────────
-    const [result] = await pool.execute(
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const [result] = await connection.execute(
       `INSERT INTO fee_records (student_id, amount, paid_date, payment_mode, reference_no, status)
        VALUES (?, ?, CURDATE(), ?, ?, 'Paid')`,
       [targetStudentId, amount, payMode, referenceNo || null]
@@ -88,7 +92,8 @@ router.post("/pay", authMiddleware, async (req, res) => {
       role:       "student",
       userId:     targetStudentId,
       referenceId: feeId,
-      uniqueKey:  `student:${targetStudentId}:fee-paid:${ts}`
+      uniqueKey:  `student:${targetStudentId}:fee-paid:${ts}`,
+      connection
     });
 
     // ── 4. Notify teachers ───────────────────────────────────────────────────
@@ -97,7 +102,8 @@ router.post("/pay", authMiddleware, async (req, res) => {
       message: teacherMessage,
       type: "fee",
       referenceId: feeId,
-      uniqueKeyPrefix: "fee-collected"
+      uniqueKeyPrefix: "fee-collected",
+      connection
     });
 
     // ── 5. Notify admin ──────────────────────────────────────────────────────
@@ -107,7 +113,8 @@ router.post("/pay", authMiddleware, async (req, res) => {
       type:       "fee",
       role:       "admin",
       referenceId: feeId,
-      uniqueKey:  `admin:fee-collected:${ts}`
+      uniqueKey:  `admin:fee-collected:${ts}`,
+      connection
     });
 
     // ── 6. Notify staff ──────────────────────────────────────────────────────
@@ -117,8 +124,13 @@ router.post("/pay", authMiddleware, async (req, res) => {
       type:       "fee",
       role:       "staff",
       referenceId: feeId,
-      uniqueKey:  `staff:fee-collected:${ts}`
+      uniqueKey:  `staff:fee-collected:${ts}`,
+      connection
     });
+
+    await connection.commit();
+    connection.release();
+    connection = null;
 
     res.status(201).json({
       id:       feeId,
@@ -127,7 +139,11 @@ router.post("/pay", authMiddleware, async (req, res) => {
       paid_date: new Date()
     });
   } catch (err) {
-    res.status(500).json({ message: "Error recording fee payment", error: err.message });
+    if (connection) {
+      await connection.rollback().catch(() => {});
+      connection.release();
+    }
+    res.status(500).json({ message: "Error recording fee payment" });
   }
 });
 

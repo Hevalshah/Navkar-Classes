@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { issueTokens, verifyRefreshToken } = require("../services/tokenService");
+const { logSafeError } = require("../services/safeLogger");
 
 const adminLogin = async (req, res) => {
   try {
@@ -23,7 +24,7 @@ const adminLogin = async (req, res) => {
       role: "admin"
     });
   } catch (error) {
-    console.error("Admin Login Error:", error);
+    logSafeError("Admin login failed", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -33,7 +34,7 @@ const adminLogout = async (req, res) => {
     await User.updateLastLogout(req.user.id);
     res.json({ message: "Logged out successfully" });
   } catch (error) {
-    console.error("Admin Logout Error:", error);
+    logSafeError("Admin logout failed", error);
     res.status(500).json({ message: "Server error" });
   }
 };

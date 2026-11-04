@@ -67,6 +67,7 @@ const ChangePassword = () => {
     const hasMinLength = newPassword.length >= 8;
     const hasNumber = /\D*/.test(newPassword) && /\d/.test(newPassword);
     const hasCapital = /[A-Z]/.test(newPassword);
+    const hasLowercase = /[a-z]/.test(newPassword);
     const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
     const isMatching = newPassword && newPassword === confirmPassword;
 
@@ -78,7 +79,7 @@ const ChangePassword = () => {
             return;
         }
 
-        if (!hasMinLength || !hasNumber || !hasCapital || !hasSpecial) {
+        if (!hasMinLength || !hasNumber || !hasCapital || !hasLowercase || !hasSpecial) {
             alert("New password does not meet the complexity requirements.");
             return;
         }
@@ -204,6 +205,9 @@ const ChangePassword = () => {
                                 </li>
                                 <li className={`password-check-item ${hasCapital ? "valid" : ""}`}>
                                     <i className={hasCapital ? "fas fa-check-circle" : "far fa-circle"}></i> Contains at least one CAPITAL letter
+                                </li>
+                                <li className={`password-check-item ${hasLowercase ? "valid" : ""}`}>
+                                    <i className={hasLowercase ? "fas fa-check-circle" : "far fa-circle"}></i> Contains at least one lowercase letter
                                 </li>
                                 <li className={`password-check-item ${hasNumber ? "valid" : ""}`}>
                                     <i className={hasNumber ? "fas fa-check-circle" : "far fa-circle"}></i> Contains at least one digit (0-9)

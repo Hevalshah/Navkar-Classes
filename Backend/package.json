@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "create-demo-user": "node scripts/createDemoUser.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:production": "node -e \"process.env.NODE_ENV='production'; require('./server')\"",
+    "initialize-database": "node scripts/initializeDatabase.js",
+    "test": "node --test",
+    "test:schema": "node tests/schemaSetup.js",
+    "test:fixtures": "node tests/seedFixtures.js",
     "start": "node server.js"
   },
   "keywords": [],

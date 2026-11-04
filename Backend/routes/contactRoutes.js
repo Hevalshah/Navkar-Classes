@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { logSafeError } = require("../services/safeLogger");
 const nodemailer = require("nodemailer");
 const { sendNotification } = require("../services/notificationService");
 
@@ -69,7 +70,7 @@ router.post("/", async (req, res, next) => {
 
     res.status(200).json({ success: true, message: "Enquiry sent successfully." });
   } catch (err) {
-    console.error("Contact enquiry email failed:", err);
+    logSafeError("Contact enquiry delivery failed", err);
     res.status(500).json({ success: false, message: "Unable to send enquiry. Please try again later." });
   }
 });
@@ -83,10 +84,10 @@ router.verifySmtpConnection = async () => {
 
   try {
     await createContactTransporter().verify();
-    console.log(`Contact SMTP connection verified for ${smtpConfig.user}.`);
+    console.log("Contact SMTP connection verified.");
   } catch (err) {
     console.error("Contact SMTP verification failed. Check Gmail username, App Password, host, port, secure setting, and Backend/.env loading.");
-    console.error(err.message);
+    logSafeError("Contact SMTP verification failed", err);
   }
 };
 

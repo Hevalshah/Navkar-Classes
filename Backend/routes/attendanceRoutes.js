@@ -4,14 +4,24 @@ const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
+const { resolveTeacher } = require("../services/teacherAccess");
 
 const canManageAttendance = authorizeRoles("admin", "teacher");
+const isValidDate = (value) => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+};
 
 // ===============================
 // GET STUDENTS IN A BATCH
 // ===============================
 router.get("/students/:batchId", authMiddleware, canManageAttendance, async (req, res) => {
   try {
+    if (req.user.role === "teacher") {
+      if (!(await resolveTeacher(pool, req.user))) return res.status(403).json({ message: "Forbidden" });
+    }
     const [rows] = await pool.execute(
       `SELECT u.id, st.name, u.email, st.mobile
        FROM students st
@@ -22,17 +32,33 @@ router.get("/students/:batchId", authMiddleware, canManageAttendance, async (req
     );
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching batch students", error: err.message });
+    res.status(500).json({ message: "Error fetching batch students" });
   }
 });
 
 // ===============================
-// SUBMIT ATTENDANCE (ADMIN/STAFF ONLY)
+// SUBMIT ATTENDANCE (ADMIN OR ACTIVE TEACHER)
 // ===============================
 router.post("/submit", authMiddleware, canManageAttendance, async (req, res) => {
   const { batchId, date, attendanceData } = req.body; // attendanceData is array of { studentId, status }
   if (!batchId || !date || !attendanceData || !Array.isArray(attendanceData)) {
     return res.status(400).json({ message: "Batch, Date, and Attendance List are required" });
+  }
+  if (!isValidDate(date) || attendanceData.some((record) => !record || !Number.isInteger(Number(record.studentId)) || !["Present", "Absent", "Late"].includes(record.status))) {
+    return res.status(400).json({ message: "Attendance date or records are invalid." });
+  }
+
+  if (req.user.role === "teacher") {
+    if (!(await resolveTeacher(pool, req.user))) return res.status(403).json({ message: "Forbidden" });
+    const studentIds = [...new Set(attendanceData.map((record) => Number(record.studentId)))];
+    if (studentIds.length) {
+      const placeholders = studentIds.map(() => "?").join(",");
+      const [[membership]] = await pool.execute(
+        `SELECT COUNT(DISTINCT user_id) AS count FROM students WHERE batch_id = ? AND user_id IN (${placeholders})`,
+        [batchId, ...studentIds]
+      );
+      if (Number(membership.count) !== studentIds.length) return res.status(403).json({ message: "Student is not assigned to this batch." });
+    }
   }
 
   const connection = await pool.getConnection();
@@ -88,7 +114,7 @@ router.post("/submit", authMiddleware, canManageAttendance, async (req, res) => 
     res.json({ message: "Attendance marked successfully" });
   } catch (err) {
     await connection.rollback();
-    res.status(500).json({ message: "Error saving attendance logs", error: err.message });
+    res.status(500).json({ message: "Error saving attendance logs" });
   } finally {
     connection.release();
   }
@@ -117,6 +143,9 @@ router.get("/history", authMiddleware, async (req, res) => {
     if (!batchId) {
       return res.status(400).json({ message: "Batch ID is required for administrative query" });
     }
+    if (req.user.role === "teacher") {
+      if (!(await resolveTeacher(pool, req.user))) return res.status(403).json({ message: "Forbidden" });
+    }
 
     let query = `
       SELECT a.*, st.name AS student_name, u.email AS student_email
@@ -136,7 +165,7 @@ router.get("/history", authMiddleware, async (req, res) => {
     const [rows] = await pool.execute(query, params);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error retrieving attendance logs", error: err.message });
+    res.status(500).json({ message: "Error retrieving attendance logs" });
   }
 });
 

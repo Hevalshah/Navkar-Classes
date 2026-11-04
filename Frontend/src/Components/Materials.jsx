@@ -10,9 +10,33 @@ import "../Styles/pages.css";
 const FileViewerModal = ({ fileId, title, fileType, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [fileUrl, setFileUrl] = useState("");
     const url = API_BASE_URL + `/api/materials/view/${fileId}`;
 
     const isPreviewable = ["pdf", "png", "jpg", "jpeg", "gif", "txt"].includes(fileType.toLowerCase());
+
+    useEffect(() => {
+        const controller = new AbortController();
+        let objectUrl;
+        const token = localStorage.getItem("token");
+        fetch(url, { headers: { Authorization: `Bearer ${token || ""}` }, signal: controller.signal })
+            .then((response) => {
+                if (!response.ok) throw new Error("Unable to open file");
+                return response.blob();
+            })
+            .then((blob) => {
+                objectUrl = URL.createObjectURL(blob);
+                setFileUrl(objectUrl);
+            })
+            .catch((fetchError) => {
+                if (fetchError.name !== "AbortError") setError(true);
+            })
+            .finally(() => setLoading(false));
+        return () => {
+            controller.abort();
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [url]);
 
     return (
         <div className="portal-modal-overlay" style={{
@@ -41,14 +65,14 @@ const FileViewerModal = ({ fileId, title, fileType, onClose }) => {
                             <i className="fas fa-exclamation-triangle fa-3x" style={{ color: '#e53e3e', marginBottom: '15px' }}></i>
                             <h4>Unable to display preview</h4>
                             <p>This file format may not be supported for direct viewing, or the file was deleted. You can try downloading it directly.</p>
-                            <a href={url} download className="portal-btn primary" style={{ display: 'inline-block', marginTop: '10px' }}>
+                            <a href={fileUrl || undefined} download className="portal-btn primary" style={{ display: 'inline-block', marginTop: '10px' }}>
                                 <i className="fas fa-download"></i> Download File
                             </a>
                         </div>
                     )}
                     {!error && isPreviewable ? (
                         <iframe 
-                            src={url}
+                            src={fileUrl || undefined}
                             title={title}
                             width="100%" 
                             height="100%" 
@@ -62,7 +86,7 @@ const FileViewerModal = ({ fileId, title, fileType, onClose }) => {
                                 <i className="fas fa-arrow-alt-circle-down fa-3x" style={{ color: '#4a5568', marginBottom: '15px' }}></i>
                                 <h4>Download Required</h4>
                                 <p>Files of type <strong>.{fileType}</strong> (e.g. Word, Excel, PowerPoint) cannot be previewed directly in the browser.</p>
-                                <a href={url} download className="portal-btn primary" style={{ display: 'inline-block', marginTop: '15px' }}>
+                                <a href={fileUrl || undefined} download className="portal-btn primary" style={{ display: 'inline-block', marginTop: '15px' }}>
                                     <i className="fas fa-download"></i> Download {fileType.toUpperCase()}
                                 </a>
                             </div>

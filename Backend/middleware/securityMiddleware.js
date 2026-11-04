@@ -29,11 +29,22 @@ const xssProtection = (req, res, next) => {
 };
 
 const errorMiddleware = (err, req, res, next) => {
-  console.error("API Error: ", err.stack || err.message || err);
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const statusCode = err.statusCode || err.status || (err.code === "LIMIT_FILE_SIZE" ? 413 : (res.statusCode === 200 ? 500 : res.statusCode));
+  if (process.env.NODE_ENV === "production") {
+    console.error("API error", {
+      name: err.name,
+      code: err.code,
+      method: req.method,
+      path: req.path
+    });
+  } else {
+    console.error("API error:", err.stack || err.message || err);
+  }
   res.status(statusCode).json({
-    message: err.message || "Internal Server Error",
-    stack: process.env.NODE_ENV === "production" ? null : err.stack
+    message: process.env.NODE_ENV === "production"
+      ? (statusCode >= 500 ? "An unexpected server error occurred." : "The request could not be processed.")
+      : (err.message || "Internal Server Error"),
+    ...(process.env.NODE_ENV === "production" ? {} : { stack: err.stack })
   });
 };
 

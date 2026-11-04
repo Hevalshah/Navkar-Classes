@@ -28,6 +28,7 @@ pnpm-debug.log*
 .env.*
 !.env.example
 !.env.sample
+Backend/tests/test-grants.txt
 
 # Runtime files
 *.pid

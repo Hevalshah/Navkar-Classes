@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL, openAuthenticatedFile } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -28,12 +28,15 @@ const StudentTests = ({ user, handleLogout }) => {
     const activeTests = tests.filter(t => t.submissionStatus === "Pending");
     const completedTests = tests.filter(t => t.submissionStatus === "Graded" || t.score !== "N/A");
 
-    const handleStartTest = (test) => {
+    const handleStartTest = async (test) => {
         const confirmStart = window.confirm(`Important Notice:\n\nThis will open the online exam document for "${test.title}".\nDo you want to start this assessment now?`);
         if (confirmStart) {
-            // Open file in new window/tab
             const viewUrl = API_BASE_URL + `/api/tests/view/${test.id}`;
-            window.open(viewUrl, "_blank");
+            try {
+                await openAuthenticatedFile(viewUrl);
+            } catch (error) {
+                window.alert(error.message);
+            }
         }
     };
 
@@ -212,6 +215,20 @@ const StaffTests = ({ user, handleLogout, role }) => {
         setShowModal(true);
     };
 
+    const handleEdit = (test) => {
+        setFormData({
+            id: test.id,
+            title: test.title || "",
+            subjectId: String(test.subject_id || ""),
+            batchId: String(test.batch_id || ""),
+            totalMarks: String(test.total_marks || ""),
+            testDate: String(test.test_date || "").slice(0, 10),
+            instructions: test.instructions || ""
+        });
+        setFileToUpload(null);
+        setShowModal(true);
+    };
+
     const handleDelete = async (id) => {
         if(window.confirm("Are you sure you want to delete this test?")) {
             try {
@@ -244,8 +261,8 @@ const StaffTests = ({ user, handleLogout, role }) => {
         body.append("instructions", formData.instructions);
 
         try {
-            const res = await fetch(API_BASE_URL + "/api/tests", {
-                method: "POST",
+            const res = await fetch(API_BASE_URL + (formData.id ? `/api/tests/${formData.id}` : "/api/tests"), {
+                method: formData.id ? "PUT" : "POST",
                 headers: { "Authorization": `Bearer ${token}` },
                 body
             });
@@ -346,11 +363,14 @@ const StaffTests = ({ user, handleLogout, role }) => {
                                                     <td>
                                                         <div style={{ display: 'flex', gap: '8px' }}>
                                                             {t.file_path && (
-                                                                <a href={API_BASE_URL + `/api/tests/view/${t.id}`} target="_blank" rel="noopener noreferrer" className="portal-btn outline-secondary" style={{ padding: '4px 8px', fontSize: '12px' }}>
+                                                                <button type="button" onClick={() => openAuthenticatedFile(API_BASE_URL + `/api/tests/view/${t.id}`).catch((error) => window.alert(error.message))} className="portal-btn outline-secondary" style={{ padding: '4px 8px', fontSize: '12px' }}>
                                                                     <i className="fas fa-eye"></i> View Paper
-                                                                </a>
+                                                                </button>
                                                             )}
-                                                            <button className="portal-btn outline-danger" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleDelete(t.id)}>
+                                                                <button className="portal-btn outline-primary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleEdit(t)}>
+                                                                    <i className="fas fa-edit"></i> Edit
+                                                                </button>
+                                                                <button className="portal-btn outline-danger" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => handleDelete(t.id)}>
                                                                 <i className="fas fa-trash"></i> Delete
                                                             </button>
                                                         </div>
@@ -438,7 +458,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
                         width: '100%', maxWidth: '550px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ margin: 0 }}>Create New Test</h3>
+                            <h3 style={{ margin: 0 }}>{formData.id ? "Edit Test" : "Create New Test"}</h3>
                             <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
                         </div>
                         
@@ -488,7 +508,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
 
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                                 <button type="button" className="portal-btn outline-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                                <button type="submit" className="portal-btn primary">Save Test</button>
+                                <button type="submit" className="portal-btn primary">{formData.id ? "Update Test" : "Save Test"}</button>
                             </div>
                         </form>
                     </div>

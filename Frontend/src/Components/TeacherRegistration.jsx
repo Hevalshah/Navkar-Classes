@@ -429,7 +429,7 @@ const TeacherRegistration = () => {
                                     <input
                                         type="password"
                                         className="form-input"
-                                        placeholder={editingTeacher ? "Leave blank to keep" : "Set a password"}
+                                        placeholder={editingTeacher ? "Leave blank to keep" : "8+ chars, upper/lowercase, number, symbol"}
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         required={!editingTeacher}

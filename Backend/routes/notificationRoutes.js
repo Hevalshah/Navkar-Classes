@@ -2,13 +2,14 @@ const express = require("express");
 const router  = express.Router();
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
+const { logSafeError } = require("../services/safeLogger");
 
 const requiresOwner = (role) => role === "student";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED helper – exported so other route files can use it
 // ─────────────────────────────────────────────────────────────────────────────
-const insertNotification = async ({ title, message, type, role, userId, referenceId, uniqueKey }) => {
+const insertNotification = async ({ title, message, type, role, userId, referenceId, uniqueKey, connection }) => {
   try {
     const normalizedRole = String(role || "").toLowerCase();
     if (requiresOwner(normalizedRole) && !userId) return;
@@ -23,7 +24,7 @@ const insertNotification = async ({ title, message, type, role, userId, referenc
       uniqueKey
     };
 
-    await pool.execute(
+    await (connection || pool).execute(
       `INSERT IGNORE INTO notifications
         (title, message, type, role, user_id, reference_id, unique_key, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -39,8 +40,9 @@ const insertNotification = async ({ title, message, type, role, userId, referenc
     );
 
   } catch (err) {
+    if (connection) throw err;
     // Never crash a business transaction because of a notification failure
-    console.error("[Notification] insert error:", err.message);
+    logSafeError("Notification insert failed", err);
   }
 };
 
@@ -101,8 +103,8 @@ router.get("/", authMiddleware, async (req, res) => {
     const rows = await getNotificationsForUser(req);
     res.json(rows);
   } catch (err) {
-    console.error("[Notification] GET /:", err.message);
-    res.status(err.statusCode || 500).json({ message: "Error fetching notifications", error: err.message });
+    logSafeError("Notification list failed", err);
+    res.status(err.statusCode || 500).json({ message: "Error fetching notifications" });
   }
 });
 
@@ -111,8 +113,8 @@ router.get("/student", authMiddleware, async (req, res) => {
     const rows = await getNotificationsForUser(req, "student");
     res.json(rows);
   } catch (err) {
-    console.error("[Notification] GET /student:", err.message);
-    res.status(err.statusCode || 500).json({ message: "Error fetching student notifications", error: err.message });
+    logSafeError("Student notification list failed", err);
+    res.status(err.statusCode || 500).json({ message: "Error fetching student notifications" });
   }
 });
 
@@ -121,8 +123,8 @@ router.get("/teacher", authMiddleware, async (req, res) => {
     const rows = await getNotificationsForUser(req, "teacher");
     res.json(rows);
   } catch (err) {
-    console.error("[Notification] GET /teacher:", err.message);
-    res.status(err.statusCode || 500).json({ message: "Error fetching teacher notifications", error: err.message });
+    logSafeError("Teacher notification list failed", err);
+    res.status(err.statusCode || 500).json({ message: "Error fetching teacher notifications" });
   }
 });
 
@@ -173,8 +175,8 @@ router.get("/unread", authMiddleware, async (req, res) => {
 
     res.json(rows);
   } catch (err) {
-    console.error("[Notification] GET /unread:", err.message);
-    res.status(500).json({ message: "Error fetching unread notifications", error: err.message });
+    logSafeError("Unread notification query failed", err);
+    res.status(500).json({ message: "Error fetching unread notifications" });
   }
 });
 
@@ -211,7 +213,7 @@ router.put("/read-all", authMiddleware, async (req, res) => {
     );
     res.json({ message: "All notifications marked as read" });
   } catch (err) {
-    res.status(500).json({ message: "Error marking all notifications as read", error: err.message });
+    res.status(500).json({ message: "Error marking all notifications as read" });
   }
 });
 
@@ -247,7 +249,7 @@ router.put("/:id/read", authMiddleware, async (req, res) => {
     );
     res.json({ message: "Notification marked as read" });
   } catch (err) {
-    res.status(500).json({ message: "Error marking notification as read", error: err.message });
+    res.status(500).json({ message: "Error marking notification as read" });
   }
 });
 

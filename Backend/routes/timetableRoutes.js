@@ -47,7 +47,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const [rows] = await pool.execute(query, params);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching timetable", error: err.message });
+    res.status(500).json({ message: "Error fetching timetable" });
   }
 });
 
@@ -93,7 +93,7 @@ router.post("/", authMiddleware, canManageTimetable, async (req, res) => {
 
     res.status(201).json(inserted[0]);
   } catch (err) {
-    res.status(500).json({ message: "Error scheduling timetable entry", error: err.message });
+    res.status(500).json({ message: "Error scheduling timetable entry" });
   }
 });
 
@@ -105,7 +105,7 @@ router.delete("/:id", authMiddleware, canManageTimetable, async (req, res) => {
     await pool.execute("DELETE FROM timetable WHERE id = ?", [req.params.id]);
     res.json({ message: "Timetable entry deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting timetable entry", error: err.message });
+    res.status(500).json({ message: "Error deleting timetable entry" });
   }
 });
 

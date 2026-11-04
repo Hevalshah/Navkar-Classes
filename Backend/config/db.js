@@ -16,7 +16,9 @@ const pool = mysql.createPool({
   database
 });
 
-const connectDB = async () => {
+// Explicit maintenance operation. This retains the existing schema/data
+// initialization code, but normal application startup must never call it.
+const initializeSchemaAndLegacyData = async () => {
   const connection = await mysql.createConnection(dbConfig);
   await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
   await connection.end();
@@ -233,11 +235,13 @@ const connectDB = async () => {
       file_path VARCHAR(555) NOT NULL,
       file_type VARCHAR(10) NOT NULL,
       file_size VARCHAR(50) NOT NULL,
-      uploaded_by INT NOT NULL,
+      uploaded_by INT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      uploaded_by_teacher_id INT NULL,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
       FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
-      FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (uploaded_by_teacher_id) REFERENCES teachers(id) ON DELETE SET NULL
     )
   `);
 
@@ -251,12 +255,14 @@ const connectDB = async () => {
       instructions TEXT NULL,
       total_marks INT NOT NULL,
       file_path VARCHAR(555) NULL,
-      created_by INT NOT NULL,
+      created_by INT NULL,
       test_date DATE NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_by_teacher_id INT NULL,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
       FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
-      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (created_by_teacher_id) REFERENCES teachers(id) ON DELETE SET NULL
     )
   `);
 
@@ -371,4 +377,11 @@ const connectDB = async () => {
   console.log("MySQL connected and schema initialized");
 };
 
-module.exports = { connectDB, pool };
+// Normal startup only verifies connectivity. It never performs DDL or data
+// migration/cleanup operations.
+const connectDB = async () => {
+  await pool.query("SELECT 1");
+  console.log("MySQL connection verified");
+};
+
+module.exports = { connectDB, initializeSchemaAndLegacyData, pool };

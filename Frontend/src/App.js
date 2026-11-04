@@ -39,31 +39,32 @@ function App() {
         <Route path="/teacher-registration" element={<ProtectedRoute allowedRoles={["admin"]}><TeacherRegistration /></ProtectedRoute>} />
 
         {/* Timetable Dropdown */}
-        <Route path="/timetable" element={<Timetable />} />
-        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/timetable" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><Timetable /></ProtectedRoute>} />
+        <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><Attendance /></ProtectedRoute>} />
 
         {/* Exam Dropdown */}
-        <Route path="/result" element={<Result />} />
+        <Route path="/result" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><Result /></ProtectedRoute>} />
 
         {/* Fee Dropdown */}
-        <Route path="/pay-fees" element={<PayFees />} />
-        <Route path="/fee-history" element={<FeeHistory />} />
+        <Route path="/pay-fees" element={<ProtectedRoute allowedRoles={["student"]}><PayFees /></ProtectedRoute>} />
+        <Route path="/fee-history" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><FeeHistory /></ProtectedRoute>} />
 
         {/* Courses Dropdown */}
-        <Route path="/materials" element={<Materials />} />
-        <Route path="/tests" element={<Tests />} />
+        <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><Materials /></ProtectedRoute>} />
+        <Route path="/tests" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><Tests /></ProtectedRoute>} />
 
         {/* Student Registration */}
         <Route path="/student-registration" element={<ProtectedRoute allowedRoles={["admin"]}><StudentRegistration /></ProtectedRoute>} />
         <Route path="/students" element={<ProtectedRoute allowedRoles={["admin", "teacher"]}><StudentManagement /></ProtectedRoute>} />
 
         {/* Other Dropdown */}
-        <Route path="/certificate-request" element={<CertificateRequest />} />
-        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/certificate-request" element={<ProtectedRoute allowedRoles={["student"]}><CertificateRequest /></ProtectedRoute>} />
+        <Route path="/feedback" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><Feedback /></ProtectedRoute>} />
 
         {/* Profile Dropdown */}
-        <Route path="/profile" element={<MyProfile />} />
-        <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/profile" element={<ProtectedRoute allowedRoles={["admin", "staff", "teacher", "student"]}><MyProfile /></ProtectedRoute>} />
+        <Route path="/change-password" element={<ProtectedRoute allowedRoles={["staff", "teacher", "student"]}><ChangePassword /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

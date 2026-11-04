@@ -5,6 +5,7 @@ const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/authMiddleware");
 const Teacher = require("../models/Teacher");
+const { validatePassword } = require("../services/passwordPolicy");
 
 const adminOnly = authorizeRoles("admin");
 const academicUser = authorizeRoles("admin", "teacher");
@@ -18,7 +19,7 @@ router.get("/standards", async (req, res) => {
     const [rows] = await pool.execute("SELECT * FROM standards ORDER BY id ASC");
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching standards", error: err.message });
+    res.status(500).json({ message: "Error fetching standards" });
   }
 });
 
@@ -29,7 +30,7 @@ router.post("/standards", authMiddleware, adminOnly, async (req, res) => {
     const [result] = await pool.execute("INSERT INTO standards (name) VALUES (?)", [name]);
     res.status(201).json({ id: result.insertId, name });
   } catch (err) {
-    res.status(500).json({ message: "Error creating standard", error: err.message });
+    res.status(500).json({ message: "Error creating standard" });
   }
 });
 
@@ -40,7 +41,7 @@ router.put("/standards/:id", authMiddleware, adminOnly, async (req, res) => {
     await pool.execute("UPDATE standards SET name = ? WHERE id = ?", [name, req.params.id]);
     res.json({ id: req.params.id, name });
   } catch (err) {
-    res.status(500).json({ message: "Error updating standard", error: err.message });
+    res.status(500).json({ message: "Error updating standard" });
   }
 });
 
@@ -49,7 +50,7 @@ router.delete("/standards/:id", authMiddleware, adminOnly, async (req, res) => {
     await pool.execute("DELETE FROM standards WHERE id = ?", [req.params.id]);
     res.json({ message: "Standard deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting standard", error: err.message });
+    res.status(500).json({ message: "Error deleting standard" });
   }
 });
 
@@ -66,7 +67,7 @@ router.get("/batches", async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching batches", error: err.message });
+    res.status(500).json({ message: "Error fetching batches" });
   }
 });
 
@@ -77,7 +78,7 @@ router.post("/batches", authMiddleware, adminOnly, async (req, res) => {
     const [result] = await pool.execute("INSERT INTO batches (name, standard_id) VALUES (?, ?)", [name, standardId]);
     res.status(201).json({ id: result.insertId, name, standard_id: standardId });
   } catch (err) {
-    res.status(500).json({ message: "Error creating batch", error: err.message });
+    res.status(500).json({ message: "Error creating batch" });
   }
 });
 
@@ -88,7 +89,7 @@ router.put("/batches/:id", authMiddleware, adminOnly, async (req, res) => {
     await pool.execute("UPDATE batches SET name = ?, standard_id = ? WHERE id = ?", [name, standardId, req.params.id]);
     res.json({ id: req.params.id, name, standard_id: standardId });
   } catch (err) {
-    res.status(500).json({ message: "Error updating batch", error: err.message });
+    res.status(500).json({ message: "Error updating batch" });
   }
 });
 
@@ -97,7 +98,7 @@ router.delete("/batches/:id", authMiddleware, adminOnly, async (req, res) => {
     await pool.execute("DELETE FROM batches WHERE id = ?", [req.params.id]);
     res.json({ message: "Batch deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting batch", error: err.message });
+    res.status(500).json({ message: "Error deleting batch" });
   }
 });
 
@@ -114,7 +115,7 @@ router.get("/subjects", async (req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching subjects", error: err.message });
+    res.status(500).json({ message: "Error fetching subjects" });
   }
 });
 
@@ -125,7 +126,7 @@ router.post("/subjects", authMiddleware, adminOnly, async (req, res) => {
     const [result] = await pool.execute("INSERT INTO subjects (name, standard_id) VALUES (?, ?)", [name, standardId]);
     res.status(201).json({ id: result.insertId, name, standard_id: standardId });
   } catch (err) {
-    res.status(500).json({ message: "Error creating subject", error: err.message });
+    res.status(500).json({ message: "Error creating subject" });
   }
 });
 
@@ -136,7 +137,7 @@ router.put("/subjects/:id", authMiddleware, adminOnly, async (req, res) => {
     await pool.execute("UPDATE subjects SET name = ?, standard_id = ? WHERE id = ?", [name, standardId, req.params.id]);
     res.json({ id: req.params.id, name, standard_id: standardId });
   } catch (err) {
-    res.status(500).json({ message: "Error updating subject", error: err.message });
+    res.status(500).json({ message: "Error updating subject" });
   }
 });
 
@@ -145,7 +146,7 @@ router.delete("/subjects/:id", authMiddleware, adminOnly, async (req, res) => {
     await pool.execute("DELETE FROM subjects WHERE id = ?", [req.params.id]);
     res.json({ message: "Subject deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting subject", error: err.message });
+    res.status(500).json({ message: "Error deleting subject" });
   }
 });
 
@@ -157,7 +158,7 @@ router.get("/teachers", authMiddleware, academicUser, async (req, res) => {
     const rows = await Teacher.findAll();
     res.json(rows.map(Teacher.publicTeacher));
   } catch (err) {
-    res.status(500).json({ message: "Error fetching teachers", error: err.message });
+    res.status(500).json({ message: "Error fetching teachers" });
   }
 });
 
@@ -166,6 +167,8 @@ router.post("/teachers", authMiddleware, adminOnly, async (req, res) => {
   if (!name || !email || !mobile || !password) {
     return res.status(400).json({ message: "Name, email, mobile, and password are required" });
   }
+  const passwordError = validatePassword(password);
+  if (passwordError) return res.status(400).json({ message: passwordError });
   try {
     const existing = await Teacher.findByEmail(email);
     if (existing) {
@@ -182,7 +185,7 @@ router.post("/teachers", authMiddleware, adminOnly, async (req, res) => {
     });
     res.status(201).json(Teacher.publicTeacher(newTeacher));
   } catch (err) {
-    res.status(500).json({ message: "Error creating teacher", error: err.message });
+    res.status(500).json({ message: "Error creating teacher" });
   }
 });
 
@@ -190,6 +193,10 @@ router.put("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
   const { name, email, mobile, password, status } = req.body;
   if (!name || !email || !mobile || !status) {
     return res.status(400).json({ message: "Name, email, mobile, and status are required" });
+  }
+  if (password) {
+    const passwordError = validatePassword(password);
+    if (passwordError) return res.status(400).json({ message: passwordError });
   }
   try {
     const existing = await Teacher.findByEmail(email);
@@ -204,7 +211,7 @@ router.put("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
     const updatedTeacher = await Teacher.update(parseInt(req.params.id), updatedData);
     res.json(Teacher.publicTeacher(updatedTeacher));
   } catch (err) {
-    res.status(500).json({ message: "Error updating teacher", error: err.message });
+    res.status(500).json({ message: "Error updating teacher" });
   }
 });
 
@@ -215,7 +222,7 @@ router.delete("/teachers/:id", authMiddleware, adminOnly, async (req, res) => {
     await Teacher.remove(parseInt(req.params.id));
     res.json({ message: "Teacher deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting teacher", error: err.message });
+    res.status(500).json({ message: "Error deleting teacher" });
   }
 });
 
@@ -284,7 +291,7 @@ router.get("/students", authMiddleware, academicUser, async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ message: "Error fetching students", error: err.message });
+    res.status(500).json({ message: "Error fetching students" });
   }
 });
 
@@ -317,6 +324,19 @@ router.put("/students/:id", authMiddleware, studentManager, async (req, res) => 
       return res.status(404).json({ message: "Student not found" });
     }
 
+    const [[currentStudent]] = await connection.execute(
+      "SELECT standard_id, batch_id, is_active FROM students WHERE user_id = ? LIMIT 1",
+      [req.params.id]
+    );
+    if (req.user.role === "teacher" && (
+      (standardId !== undefined && Number(standardId || 0) !== Number(currentStudent.standard_id || 0)) ||
+      (batchId !== undefined && Number(batchId || 0) !== Number(currentStudent.batch_id || 0)) ||
+      (isActive !== undefined && Boolean(isActive) !== Boolean(currentStudent.is_active))
+    )) {
+      await connection.rollback();
+      return res.status(403).json({ message: "Only admins can change student enrollment or account status" });
+    }
+
     const [emailRows] = await connection.execute(
       "SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1",
       [email, req.params.id]
@@ -337,56 +357,56 @@ router.put("/students/:id", authMiddleware, studentManager, async (req, res) => 
       }
     }
 
-    await connection.execute(
-      `UPDATE users
-       SET name = ?, email = ?, is_active = ?
-       WHERE id = ? AND role = 'student'`,
-      [name, email, normalizedIsActive, req.params.id]
-    );
-
-    await connection.execute(
-      `UPDATE students
-       SET name = ?, mobile = ?, parent_name = ?, address = ?,
-           standard_id = ?, batch_id = ?, is_active = ?
-       WHERE user_id = ?`,
-      [
-        name,
-        mobile || null,
-        parentName || null,
-        address || null,
-        normalizedStandardId,
-        normalizedBatchId,
-        normalizedIsActive,
-        req.params.id
-      ]
-    );
+    if (req.user.role === "admin") {
+      await connection.execute(
+        "UPDATE users SET name = ?, email = ?, is_active = ? WHERE id = ? AND role = 'student'",
+        [name, email, normalizedIsActive, req.params.id]
+      );
+      await connection.execute(
+        `UPDATE students SET name = ?, mobile = ?, parent_name = ?, address = ?, standard_id = ?, batch_id = ?, is_active = ? WHERE user_id = ?`,
+        [name, mobile || null, parentName || null, address || null, normalizedStandardId, normalizedBatchId, normalizedIsActive, req.params.id]
+      );
+    } else {
+      await connection.execute("UPDATE users SET name = ?, email = ? WHERE id = ? AND role = 'student'", [name, email, req.params.id]);
+      await connection.execute(
+        "UPDATE students SET name = ?, mobile = ?, parent_name = ?, address = ? WHERE user_id = ?",
+        [name, mobile || null, parentName || null, address || null, req.params.id]
+      );
+    }
 
     await connection.commit();
     res.json({ message: "Student updated successfully" });
   } catch (err) {
     await connection.rollback();
-    res.status(500).json({ message: "Error updating student", error: err.message });
+    res.status(500).json({ message: "Error updating student" });
   } finally {
     connection.release();
   }
 });
 
-router.delete("/students/:id", authMiddleware, studentManager, async (req, res) => {
+router.delete("/students/:id", authMiddleware, adminOnly, async (req, res) => {
+  const connection = await pool.getConnection();
   try {
-    await pool.execute("DELETE FROM notification_reads WHERE user_id = ?", [req.params.id]);
-    await pool.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [req.params.id]);
-    const [result] = await pool.execute(
+    await connection.beginTransaction();
+    await connection.execute("DELETE FROM notification_reads WHERE user_id = ?", [req.params.id]);
+    await connection.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [req.params.id]);
+    const [result] = await connection.execute(
       "DELETE FROM users WHERE id = ? AND role = 'student'",
       [req.params.id]
     );
 
     if (result.affectedRows === 0) {
+      await connection.rollback();
       return res.status(404).json({ message: "Student not found" });
     }
 
+    await connection.commit();
     res.json({ message: "Student deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting student", error: err.message });
+    await connection.rollback();
+    res.status(500).json({ message: "Error deleting student" });
+  } finally {
+    connection.release();
   }
 });
 

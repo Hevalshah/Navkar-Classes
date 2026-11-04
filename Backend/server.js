@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const { connectDB } = require("./config/db");
 const { xssProtection, errorMiddleware } = require("./middleware/securityMiddleware");
 const contactRoutes = require("./routes/contactRoutes");
+const { logSafeError } = require("./services/safeLogger");
 
 // Environment variable validation
 const requiredEnv = ["PORT", "JWT_SECRET", "JWT_REFRESH_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "OFFICE_EMAIL"];
@@ -49,13 +50,13 @@ app.use(cors({
     callback(new Error("Origin is not allowed by CORS"));
   }
 }));
+// Razorpay signs the exact request bytes; parse this endpoint before the
+// general JSON parser so signature verification uses the original payload.
+app.use("/api/payments/webhook", express.raw({ type: "application/json", limit: "1mb" }));
 app.use(express.json());
 
 // XSS protection
 app.use(xssProtection);
-
-// Serve static uploads folder (in case of direct download requests)
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Hook Routes
 app.use("/api/auth", require("./routes/authRoutes"));
@@ -95,6 +96,6 @@ const startServer = async () => {
 };
 
 startServer().catch((error) => {
-  console.error("Failed to start server:", error);
+  logSafeError("Server startup failed", error);
   process.exit(1);
 });

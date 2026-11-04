@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const rateLimit = require("express-rate-limit");
 const User = require("../models/User");
 const Teacher = require("../models/Teacher");
 const AuthController = require("../controllers/AuthController");
@@ -7,15 +8,24 @@ const authMiddleware = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/authMiddleware");
 const { issueTokens } = require("../services/tokenService");
 const { pool } = require("../config/db");
+const { validatePassword } = require("../services/passwordPolicy");
+const { logSafeError } = require("../services/safeLogger");
 
 const router = express.Router();
+const registrationLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
+const emailLooksValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 
 // ===============================
 // REGISTER ROUTE
 // ===============================
-router.post("/register", async (req, res) => {
+router.post("/register", registrationLimiter, async (req, res) => {
   try {
     const { name, parentName, mobile, email, password } = req.body;
+
+    const passwordError = validatePassword(password);
+    if (!String(name || "").trim() || !emailLooksValid(email) || passwordError) {
+      return res.status(400).json({ message: passwordError || "A name and valid email address are required." });
+    }
 
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -36,15 +46,15 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({ ...issueTokens(user), role: user.role });
   } catch (error) {
-    console.error("Registration Error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logSafeError("Registration failed", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // ===============================
 // REGISTER STUDENT ROUTE (ADMIN ROLE ONLY)
 // ===============================
-router.post("/register-student", authMiddleware, authorizeRoles("admin"), async (req, res) => {
+router.post("/register-student", authMiddleware, authorizeRoles("admin"), registrationLimiter, async (req, res) => {
   try {
     const { name, mobile, email, address, course, assignedBatch, standardId, batchId, totalFee, username, password } = req.body;
     const normalizedTotalFee = Number(totalFee);
@@ -53,6 +63,9 @@ router.post("/register-student", authMiddleware, authorizeRoles("admin"), async 
     if (!name || !email || !standardId || !batchId || !password || !Number.isFinite(normalizedTotalFee) || normalizedTotalFee <= 0) {
       return res.status(400).json({ message: "Full Name, Email, Class, Batch, Total Fee, and Temporary Password are required fields" });
     }
+    const passwordError = validatePassword(password);
+    if (passwordError) return res.status(400).json({ message: passwordError });
+    if (!emailLooksValid(email)) return res.status(400).json({ message: "A valid email address is required." });
 
     const [batchRows] = await pool.execute(
       "SELECT id, name FROM batches WHERE id = ? AND standard_id = ? LIMIT 1",
@@ -62,13 +75,11 @@ router.post("/register-student", authMiddleware, authorizeRoles("admin"), async 
       return res.status(400).json({ message: "Selected batch does not belong to the selected class" });
     }
 
-    // Validation for duplicate email. If the same student was removed earlier,
-    // clear the inactive login row so the email can be enrolled again.
+    // Re-enroll inactive accounts atomically with their replacement records.
+    const inactiveRecordsToReplace = new Map();
     const existingEmailUser = await User.findByEmail(email);
     if (existingEmailUser?.role === "student" && !existingEmailUser.isActive) {
-      await pool.execute("DELETE FROM notification_reads WHERE user_id = ?", [existingEmailUser.id]);
-      await pool.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [existingEmailUser.id]);
-      await pool.execute("DELETE FROM users WHERE id = ? AND role = 'student'", [existingEmailUser.id]);
+      inactiveRecordsToReplace.set(existingEmailUser.id, existingEmailUser.id);
     } else if (existingEmailUser) {
       return res.status(400).json({ message: "Email is already registered" });
     }
@@ -77,9 +88,7 @@ router.post("/register-student", authMiddleware, authorizeRoles("admin"), async 
     if (username) {
       const existingUsernameUser = await User.findByUsername(username);
       if (existingUsernameUser?.role === "student" && !existingUsernameUser.isActive) {
-        await pool.execute("DELETE FROM notification_reads WHERE user_id = ?", [existingUsernameUser.id]);
-        await pool.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [existingUsernameUser.id]);
-        await pool.execute("DELETE FROM users WHERE id = ? AND role = 'student'", [existingUsernameUser.id]);
+        inactiveRecordsToReplace.set(existingUsernameUser.id, existingUsernameUser.id);
       } else if (existingUsernameUser) {
         return res.status(400).json({ message: "Username is already taken" });
       }
@@ -88,25 +97,42 @@ router.post("/register-student", authMiddleware, authorizeRoles("admin"), async 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await User.create({
-      name,
-      mobile: mobile || null,
-      email,
-      username: username || null,
-      password: hashedPassword,
-      role: "student",
-      address: address || null,
-      course: course || null,
-      assignedBatch: assignedBatch || batchRows[0].name,
-      totalFee: normalizedTotalFee,
-      standardId: standardId ? parseInt(standardId) : null,
-      batchId: batchId ? parseInt(batchId) : null
-    });
+    const connection = await pool.getConnection();
+    let user;
+    try {
+      await connection.beginTransaction();
+      for (const oldUserId of inactiveRecordsToReplace.keys()) {
+        await connection.execute("DELETE FROM notification_reads WHERE user_id = ?", [oldUserId]);
+        await connection.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [oldUserId]);
+        await connection.execute("DELETE FROM users WHERE id = ? AND role = 'student'", [oldUserId]);
+      }
+      user = await User.create({
+        name,
+        mobile: mobile || null,
+        email,
+        username: username || null,
+        password: hashedPassword,
+        role: "student",
+        address: address || null,
+        course: course || null,
+        assignedBatch: assignedBatch || batchRows[0].name,
+        totalFee: normalizedTotalFee,
+        standardId: standardId ? parseInt(standardId) : null,
+        batchId: batchId ? parseInt(batchId) : null
+      }, connection);
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+    user = await User.findById(user.id);
 
     res.status(201).json({ message: "Student registered successfully", userId: user.id });
   } catch (error) {
-    console.error("Student Registration Error:", error);
-    res.status(500).json({ message: "Server error during student registration", error: error.message });
+    logSafeError("Student registration failed", error);
+    res.status(500).json({ message: "Server error during student registration" });
   }
 });
 
@@ -120,6 +146,19 @@ router.put("/update-profile", authMiddleware, async (req, res) => {
 
     if (!name || !email) {
       return res.status(400).json({ message: "Full Name and Email are required fields" });
+    }
+
+    if (req.user.role === "teacher") {
+      const currentTeacher = await Teacher.findById(userId);
+      if (!currentTeacher || currentTeacher.status !== "Active") return res.status(403).json({ message: "Forbidden" });
+      const existingTeacher = await Teacher.findByEmail(email);
+      if (existingTeacher && Number(existingTeacher.id) !== Number(userId)) {
+        return res.status(400).json({ message: "Email is already registered by another teacher" });
+      }
+      const updatedTeacher = await Teacher.update(userId, {
+        name, email, mobile, status: currentTeacher.status
+      });
+      return res.json({ message: "Profile updated successfully", user: Teacher.publicTeacher(updatedTeacher) });
     }
 
     // Validation for duplicate email
@@ -149,8 +188,8 @@ router.put("/update-profile", authMiddleware, async (req, res) => {
 
     res.json({ message: "Profile updated successfully", user: User.publicUser(updatedUser) });
   } catch (error) {
-    console.error("Profile Update Error:", error);
-    res.status(500).json({ message: "Server error during profile update", error: error.message });
+    logSafeError("Profile update failed", error);
+    res.status(500).json({ message: "Server error during profile update" });
   }
 });
 
@@ -164,6 +203,8 @@ router.put("/change-password", authMiddleware, async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: "Current password and new password are required" });
     }
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) return res.status(400).json({ message: passwordError });
 
     let account;
     if (req.user.role === "teacher") {
@@ -192,8 +233,8 @@ router.put("/change-password", authMiddleware, async (req, res) => {
 
     res.json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error("Change Password Error:", error);
-    res.status(500).json({ message: "Server error during password update", error: error.message });
+    logSafeError("Password update failed", error);
+    res.status(500).json({ message: "Server error during password update" });
   }
 });
 
@@ -252,15 +293,8 @@ router.post("/logout", authMiddleware, async (req, res) => {
 // ===============================
 // FORGOT PASSWORD (BASIC)
 // ===============================
-router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
-
-  const user = await User.findByEmail(email);
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  res.json({ message: "Reset link sent to email" });
+router.post("/forgot-password", registrationLimiter, async (req, res) => {
+  res.status(501).json({ message: "Password reset is unavailable until secure token storage is approved." });
 });
 
 module.exports = router;

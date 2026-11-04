@@ -1,4 +1,5 @@
 const twilio = require("twilio");
+const { logSafeError } = require("./safeLogger");
 
 const sendSMSViaTwilio = async (message) => {
   const sid = process.env.TWILIO_ACCOUNT_SID;
@@ -49,8 +50,7 @@ const sendWhatsAppViaCloudAPI = async (message) => {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`WhatsApp API error: ${JSON.stringify(errorData)}`);
+    throw new Error("WhatsApp notification provider request failed");
   }
 
   return true;
@@ -66,7 +66,7 @@ const sendNotification = async (message) => {
     try {
       twilioSuccess = await sendSMSViaTwilio(message);
     } catch (err) {
-      console.error("Failed to send Twilio SMS:", err);
+      logSafeError("Twilio notification failed", err);
     }
   }
 
@@ -74,7 +74,7 @@ const sendNotification = async (message) => {
     try {
       whatsappSuccess = await sendWhatsAppViaCloudAPI(message);
     } catch (err) {
-      console.error("Failed to send WhatsApp message:", err);
+      logSafeError("WhatsApp notification failed", err);
     }
   }
 

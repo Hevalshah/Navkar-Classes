@@ -308,13 +308,13 @@ const StudentManagement = () => {
                                                     >
                                                         <i className="fas fa-edit"></i> Edit
                                                     </button>
-                                                    <button
+                                                    {role === "admin" && <button
                                                         className="portal-btn outline-danger"
                                                         style={{ padding: "5px 10px", fontSize: "12px" }}
                                                         onClick={() => setStudentToRemove(student)}
                                                     >
                                                         <i className="fas fa-user-slash"></i> Remove
-                                                    </button>
+                                                    </button>}
                                                 </div>
                                             </td>
                                         </tr>
@@ -363,21 +363,21 @@ const StudentManagement = () => {
                                 </div>
                                 <div className="portal-form-group">
                                     <label>Class / Standard</label>
-                                    <select className="portal-form-input" value={editForm.standardId} onChange={(e) => handleEditChange("standardId", e.target.value)}>
+                                    <select className="portal-form-input" disabled={role !== "admin"} value={editForm.standardId} onChange={(e) => handleEditChange("standardId", e.target.value)}>
                                         <option value="">No Class</option>
                                         {standards.map((standard) => <option key={standard.id} value={standard.id}>{standard.name}</option>)}
                                     </select>
                                 </div>
                                 <div className="portal-form-group">
                                     <label>Batch</label>
-                                    <select className="portal-form-input" value={editForm.batchId} onChange={(e) => handleEditChange("batchId", e.target.value)}>
+                                    <select className="portal-form-input" disabled={role !== "admin"} value={editForm.batchId} onChange={(e) => handleEditChange("batchId", e.target.value)}>
                                         <option value="">No Batch</option>
                                         {editBatches.map((batch) => <option key={batch.id} value={batch.id}>{batch.name}</option>)}
                                     </select>
                                 </div>
                                 <div className="portal-form-group">
                                     <label>Status</label>
-                                    <select className="portal-form-input" value={editForm.isActive ? "active" : "inactive"} onChange={(e) => handleEditChange("isActive", e.target.value === "active")}>
+                                    <select className="portal-form-input" disabled={role !== "admin"} value={editForm.isActive ? "active" : "inactive"} onChange={(e) => handleEditChange("isActive", e.target.value === "active")}>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
                                     </select>
@@ -396,7 +396,7 @@ const StudentManagement = () => {
                 </div>
             )}
 
-            {studentToRemove && (
+            {role === "admin" && studentToRemove && (
                 <div className="portal-modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "16px" }}>
                     <div className="portal-card" style={{ width: "100%", maxWidth: "430px", background: "#fff" }}>
                         <h3 style={{ marginTop: 0 }}>Remove Student</h3>

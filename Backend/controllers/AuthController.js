@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Teacher = require("../models/Teacher");
 const { issueTokens, verifyRefreshToken } = require("../services/tokenService");
+const { logSafeError } = require("../services/safeLogger");
 
 const publicLogin = async (req, res) => {
   try {
@@ -42,7 +43,7 @@ const publicLogin = async (req, res) => {
       role: account.role
     });
   } catch (error) {
-    console.error("Public Login Error:", error);
+    logSafeError("Public login failed", error);
     res.status(500).json({ message: "Server error" });
   }
 };

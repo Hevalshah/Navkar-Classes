@@ -341,7 +341,7 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
                                         <th>Pending</th>
                                         <th>Last Payment</th>
                                         <th>Status</th>
-                                        <th>Action</th>
+                                        {role !== "teacher" && <th>Action</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -359,7 +359,7 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
                                                         {student.status}
                                                     </span>
                                                 </td>
-                                                <td>
+                                                {role !== "teacher" && <td>
                                                     {student.pendingAmount > 0 ? (
                                                         <button className="portal-btn primary sm" onClick={() => handleRecordPayment(student.id)}>
                                                             <i className="fas fa-plus-circle"></i> Record Pay
@@ -367,12 +367,12 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
                                                     ) : (
                                                         <span style={{ color: '#2ecc71', fontSize: '13px' }}><i className="fas fa-check-circle"></i> Cleared</span>
                                                     )}
-                                                </td>
+                                                </td>}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>No student records matching filters.</td>
+                                            <td colSpan={role === "teacher" ? 7 : 8} style={{ textAlign: 'center', padding: '20px' }}>No student records matching filters.</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -383,7 +383,7 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
             </div>
 
             {/* Record Payment Modal */}
-            {showModal && (
+            {showModal && role !== "teacher" && (
                 <div className="modal-overlay" style={{
                     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
                     backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex',

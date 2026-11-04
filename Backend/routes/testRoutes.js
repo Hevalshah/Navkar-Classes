@@ -1,29 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { createUpload, verifyUploadedFile } = require("../middleware/uploadValidation");
 const { pool } = require("../config/db");
 const authMiddleware = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/authMiddleware");
 const { insertNotification } = require("./notificationRoutes");
+const { resolveTeacher } = require("../services/teacherAccess");
 const uploadDir = path.join(__dirname, "../uploads/tests");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer Storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage });
+const testExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"];
+const upload = createUpload({ destination: uploadDir, extensions: testExtensions, maxBytes: 20 * 1024 * 1024 });
 
 // ===============================
 // GET TESTS
@@ -31,11 +22,12 @@ const upload = multer({ storage });
 router.get("/", authMiddleware, async (req, res) => {
   try {
     let query = `
-      SELECT t.*, sub.name AS subject_name, b.name AS batch_name, u.name AS creator_name 
+      SELECT t.*, sub.name AS subject_name, b.name AS batch_name, COALESCE(owner.name, u.name) AS creator_name
       FROM tests t
       JOIN subjects sub ON t.subject_id = sub.id
       JOIN batches b ON t.batch_id = b.id
-      JOIN users u ON t.created_by = u.id
+      LEFT JOIN users u ON t.created_by = u.id
+      LEFT JOIN teachers owner ON t.created_by_teacher_id = owner.id
     `;
     const params = [];
 
@@ -47,6 +39,10 @@ router.get("/", authMiddleware, async (req, res) => {
       } else {
         return res.json([]);
       }
+    } else if (req.user.role === "teacher") {
+      const teacher = await resolveTeacher(pool, req.user);
+      if (!teacher) return res.status(403).json({ message: "Forbidden" });
+      // Active teachers can view assessments across all batches.
     }
 
     query += " ORDER BY t.id ASC";
@@ -74,14 +70,14 @@ router.get("/", authMiddleware, async (req, res) => {
       res.json(testRows);
     }
   } catch (err) {
-    res.status(500).json({ message: "Error fetching tests", error: err.message });
+    res.status(500).json({ message: "Error fetching tests" });
   }
 });
 
 // ===============================
 // CREATE / UPLOAD TEST
 // ===============================
-router.post("/", authMiddleware, authorizeRoles("admin", "teacher"), upload.single("file"), async (req, res) => {
+router.post("/", authMiddleware, authorizeRoles("admin", "teacher"), upload.single("file"), verifyUploadedFile(testExtensions), async (req, res) => {
   try {
     const { title, subjectId, batchId, instructions, totalMarks, testDate } = req.body;
     if (!title || !subjectId || !batchId || !totalMarks || !testDate) {
@@ -89,12 +85,23 @@ router.post("/", authMiddleware, authorizeRoles("admin", "teacher"), upload.sing
       return res.status(400).json({ message: "Title, Subject, Batch, Total Marks, and Date are required" });
     }
 
+    let creatorId = req.user.role === "admin" ? req.user.id : null;
+    let creatorTeacherId = null;
+    if (req.user.role === "teacher") {
+      const teacher = await resolveTeacher(pool, req.user);
+      if (!teacher) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      creatorTeacherId = teacher.id;
+    }
+
     const filePath = req.file ? req.file.filename : null;
 
     const [result] = await pool.execute(
-      `INSERT INTO tests (title, subject_id, batch_id, instructions, total_marks, file_path, created_by, test_date) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [title, subjectId, batchId, instructions || "", totalMarks, filePath, req.user.id, testDate]
+      `INSERT INTO tests (title, subject_id, batch_id, instructions, total_marks, file_path, created_by, created_by_teacher_id, test_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, subjectId, batchId, instructions || "", totalMarks, filePath, creatorId, creatorTeacherId, testDate]
     );
 
     const testId = result.insertId;
@@ -144,22 +151,25 @@ router.post("/", authMiddleware, authorizeRoles("admin", "teacher"), upload.sing
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ message: "Error creating test", error: err.message });
+    res.status(500).json({ message: "Error creating test" });
   }
 });
 
 // ===============================
 // SERVE TEST FILE (VIEW FILE ACTION)
 // ===============================
-router.get("/view/:id", async (req, res) => {
+router.get("/view/:id", authMiddleware, async (req, res, next) => {
   try {
-    const [rows] = await pool.execute("SELECT * FROM tests WHERE id = ?", [req.params.id]);
+    const [rows] = await pool.execute("SELECT id, title, file_path, batch_id, created_by, created_by_teacher_id FROM tests WHERE id = ?", [req.params.id]);
     if (rows.length === 0 || !rows[0].file_path) {
       return res.status(404).send("Test file not found");
     }
 
     const test = rows[0];
-    const fullPath = path.join(uploadDir, test.file_path);
+    if (!(await canViewTest(req.user, test))) return res.status(403).json({ message: "Forbidden" });
+    const filename = path.basename(test.file_path || "");
+    if (!filename || filename !== test.file_path) return res.status(404).json({ message: "Test file not found" });
+    const fullPath = path.join(uploadDir, filename);
 
     if (!fs.existsSync(fullPath)) {
       return res.status(404).send("File does not exist on storage server");
@@ -172,24 +182,40 @@ router.get("/view/:id", async (req, res) => {
     else if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
 
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(test.title)}${ext}"`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    const disposition = [".pdf", ".png", ".jpg", ".jpeg"].includes(ext) ? "inline" : "attachment";
+    res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(test.title)}${ext}"`);
 
     const fileStream = fs.createReadStream(fullPath);
     fileStream.pipe(res);
   } catch (err) {
-    res.status(500).send("Error serving test file: " + err.message);
+    next(err);
   }
 });
+
+const canViewTest = async (user, test) => {
+  if (["admin", "staff"].includes(user.role)) return true;
+  if (user.role === "student") {
+    const [[student]] = await pool.execute("SELECT batch_id FROM students WHERE user_id = ? LIMIT 1", [user.id]);
+    return Boolean(student && Number(student.batch_id) === Number(test.batch_id));
+  }
+  if (user.role === "teacher") {
+    return Boolean(await resolveTeacher(pool, user));
+  }
+  return false;
+};
 
 // ===============================
 // DELETE TEST
 // ===============================
 router.delete("/:id", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
-    const [rows] = await pool.execute("SELECT file_path FROM tests WHERE id = ?", [req.params.id]);
+    const [rows] = await pool.execute("SELECT file_path, batch_id, created_by, created_by_teacher_id FROM tests WHERE id = ?", [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ message: "Test not found" });
     }
+
+    if (req.user.role === "teacher" && !(await canViewTest(req.user, rows[0]))) return res.status(403).json({ message: "Forbidden" });
 
     const filename = rows[0].file_path;
     await pool.execute("DELETE FROM tests WHERE id = ?", [req.params.id]);
@@ -203,12 +229,53 @@ router.delete("/:id", authMiddleware, authorizeRoles("admin", "teacher"), async 
 
     res.json({ message: "Test deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting test", error: err.message });
+    res.status(500).json({ message: "Error deleting test" });
+  }
+});
+
+router.put("/:id", authMiddleware, authorizeRoles("admin", "teacher"), upload.single("file"), verifyUploadedFile(testExtensions), async (req, res) => {
+  try {
+    const { title, subjectId, batchId, instructions, totalMarks, testDate } = req.body;
+    if (!title || !subjectId || !batchId || !Number.isInteger(Number(totalMarks)) || Number(totalMarks) < 1 || !testDate || Number.isNaN(Date.parse(testDate))) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: "Test details are invalid" });
+    }
+    if (req.user.role === "teacher" && !(await resolveTeacher(pool, req.user))) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const [[existing]] = await pool.execute("SELECT file_path, subject_id, batch_id, total_marks FROM tests WHERE id = ?", [req.params.id]);
+    if (!existing) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ message: "Test not found" });
+    }
+    const [[submissionCount]] = await pool.execute("SELECT COUNT(*) AS total FROM test_submissions WHERE test_id = ?", [req.params.id]);
+    if (Number(submissionCount.total) > 0 && (
+      Number(existing.subject_id) !== Number(subjectId) ||
+      Number(existing.batch_id) !== Number(batchId) ||
+      Number(existing.total_marks) !== Number(totalMarks)
+    )) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(409).json({ message: "Cannot change test subject, batch, or total marks after submissions exist" });
+    }
+    const filePath = req.file ? req.file.filename : existing.file_path;
+    await pool.execute(
+      "UPDATE tests SET title = ?, subject_id = ?, batch_id = ?, instructions = ?, total_marks = ?, test_date = ?, file_path = ? WHERE id = ?",
+      [title, subjectId, batchId, instructions || "", Number(totalMarks), testDate, filePath, req.params.id]
+    );
+    if (req.file && existing.file_path) {
+      const oldPath = path.join(uploadDir, path.basename(existing.file_path));
+      if (oldPath !== req.file.path && fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    res.json({ message: "Test updated successfully" });
+  } catch (err) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.status(500).json({ message: "Error updating test" });
   }
 });
 
 // ===============================
-// GET SUBMISSIONS FOR A TEST (ADMIN ONLY)
+// GET SUBMISSIONS FOR A TEST (ADMIN OR ACTIVE TEACHER)
 // ===============================
 router.get("/:id/submissions", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
@@ -216,6 +283,7 @@ router.get("/:id/submissions", authMiddleware, authorizeRoles("admin", "teacher"
     if (testRows.length === 0) return res.status(404).json({ message: "Test not found" });
 
     const batchId = testRows[0].batch_id;
+    if (req.user.role === "teacher" && !(await resolveTeacher(pool, req.user))) return res.status(403).json({ message: "Forbidden" });
 
     // Fetch all students in this test's batch
     const [students] = await pool.execute(
@@ -251,18 +319,36 @@ router.get("/:id/submissions", authMiddleware, authorizeRoles("admin", "teacher"
 
     res.json(studentSubmissions);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching submissions", error: err.message });
+    res.status(500).json({ message: "Error fetching submissions" });
   }
 });
 
 // ===============================
-// GRADE / UPDATE SCORE (ADMIN ONLY)
+// GRADE / UPDATE SCORE (ADMIN OR ACTIVE TEACHER)
 // ===============================
 router.post("/grade", authMiddleware, authorizeRoles("admin", "teacher"), async (req, res) => {
   try {
     const { testId, studentId, score, status } = req.body;
     if (!testId || !studentId || score === undefined) {
       return res.status(400).json({ message: "Test ID, Student ID, and Score are required" });
+    }
+
+    const [[test]] = await pool.execute("SELECT total_marks, batch_id FROM tests WHERE id = ? LIMIT 1", [testId]);
+    if (!test) return res.status(404).json({ message: "Test not found" });
+    const scoreText = String(score).trim();
+    const numericScore = Number(scoreText);
+    if (!/^(?:\d+\.?\d*|\.\d+)$/.test(scoreText) || scoreText.length > 50 || !Number.isFinite(numericScore) || numericScore < 0 || numericScore > Number(test.total_marks)) {
+      return res.status(400).json({ message: "Score must be a number within the test's mark range." });
+    }
+    if (status !== undefined && !["Graded", "Ungraded"].includes(status)) {
+      return res.status(400).json({ message: "Invalid submission status." });
+    }
+    if (req.user.role === "teacher") {
+      if (!(await resolveTeacher(pool, req.user))) return res.status(403).json({ message: "Forbidden" });
+    }
+    const [[student]] = await pool.execute("SELECT batch_id FROM students WHERE user_id = ? LIMIT 1", [studentId]);
+    if (!student || Number(student.batch_id) !== Number(test.batch_id)) {
+      return res.status(400).json({ message: "Student is not assigned to this test's batch." });
     }
 
     // Check if submission already exists
@@ -274,12 +360,12 @@ router.post("/grade", authMiddleware, authorizeRoles("admin", "teacher"), async 
     if (exist.length > 0) {
       await pool.execute(
         "UPDATE test_submissions SET score = ?, status = ?, submitted_date = NOW() WHERE test_id = ? AND student_id = ?",
-        [score, status || "Graded", testId, studentId]
+        [numericScore, status || "Graded", testId, studentId]
       );
     } else {
       await pool.execute(
         "INSERT INTO test_submissions (test_id, student_id, score, status, submitted_date) VALUES (?, ?, ?, ?, NOW())",
-        [testId, studentId, score, status || "Graded"]
+        [testId, studentId, numericScore, status || "Graded"]
       );
     }
 
@@ -304,7 +390,7 @@ router.post("/grade", authMiddleware, authorizeRoles("admin", "teacher"), async 
 
     res.json({ message: "Submission graded successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error grading submission", error: err.message });
+    res.status(500).json({ message: "Error grading submission" });
   }
 });
 

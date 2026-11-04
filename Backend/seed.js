@@ -1,10 +1,18 @@
 require("dotenv").config();
+if (process.env.NODE_ENV === "production") {
+  console.error("Database seeding is disabled in production.");
+  process.exit(1);
+}
 const bcrypt = require("bcryptjs");
 const { connectDB, pool } = require("./config/db");
 const User = require("./models/User");
+const { validatePassword } = require("./services/passwordPolicy");
 
 const seedDatabase = async () => {
   try {
+    const seedPassword = process.env.DEMO_SEED_PASSWORD;
+    const passwordError = validatePassword(seedPassword);
+    if (passwordError) throw new Error("Set a strong DEMO_SEED_PASSWORD in the development environment before seeding.");
     console.log("Initializing database connection...");
     await connectDB();
 
@@ -48,7 +56,7 @@ const seedDatabase = async () => {
     const subAccId = subAccResult.insertId;
     const subEcoId = subEcoResult.insertId;
 
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash(seedPassword, 10);
 
     console.log("Seeding Teachers...");
     const [t1Result] = await pool.query("INSERT INTO teachers (name, email, mobile, password, status) VALUES ('Prof. R. C. Shah', 'rcshah@navkar.com', '9876543210', ?, 'Active')", [hashedPassword]);
@@ -111,13 +119,9 @@ const seedDatabase = async () => {
 
     await User.insertMany(users);
     console.log("Database seeded successfully!");
-    console.log("\nCredentials:");
-    console.log("Student - Email/Username: student@test.com / student, Password: password123");
-    console.log("Admin - Email/Username: admin@test.com / admin, Password: password123");
-
     process.exit(0);
   } catch (error) {
-    console.error("Error seeding database:", error);
+    console.error("Database seeding failed.");
     process.exit(1);
   }
 };

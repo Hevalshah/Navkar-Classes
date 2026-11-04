@@ -105,10 +105,11 @@ const findActiveById = async (id) => {
   return mapUser(rows[0]);
 };
 
-const create = async ({ name, parentName, mobile, email, username, password, role = "student", address, course, assignedBatch, totalFee, standardId, batchId }) => {
-  const connection = await pool.getConnection();
+const create = async ({ name, parentName, mobile, email, username, password, role = "student", address, course, assignedBatch, totalFee, standardId, batchId }, suppliedConnection = null) => {
+  const connection = suppliedConnection || await pool.getConnection();
+  const managesTransaction = !suppliedConnection;
   try {
-    await connection.beginTransaction();
+    if (managesTransaction) await connection.beginTransaction();
     const [result] = await connection.execute(
       `INSERT INTO users (name, email, username, password, role)
        VALUES (?, ?, ?, ?, ?)`,
@@ -136,29 +137,35 @@ const create = async ({ name, parentName, mobile, email, username, password, rol
       );
     }
 
+    if (managesTransaction) await connection.commit();
+    return managesTransaction ? findById(result.insertId) : { id: result.insertId };
+  } catch (error) {
+    if (managesTransaction) await connection.rollback();
+    throw error;
+  } finally {
+    if (managesTransaction) connection.release();
+  }
+};
+
+const updateProfile = async (id, { name, mobile, parentName, email, address, username }) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute(
+      `UPDATE users SET name = ?, email = ?, username = ? WHERE id = ?`,
+      [String(name || "").trim(), normalizeEmail(email), username ? String(username).trim() : null, id]
+    );
+    await connection.execute(
+      `UPDATE students SET name = ?, mobile = ?, parent_name = ?, address = ? WHERE user_id = ?`,
+      [String(name || "").trim(), mobile || null, parentName || null, address || null, id]
+    );
     await connection.commit();
-    return findById(result.insertId);
   } catch (error) {
     await connection.rollback();
     throw error;
   } finally {
     connection.release();
   }
-};
-
-const updateProfile = async (id, { name, mobile, parentName, email, address, username }) => {
-  await pool.execute(
-    `UPDATE users 
-     SET name = ?, email = ?, username = ?
-     WHERE id = ?`,
-    [String(name || "").trim(), normalizeEmail(email), username ? String(username).trim() : null, id]
-  );
-  await pool.execute(
-    `UPDATE students
-     SET name = ?, mobile = ?, parent_name = ?, address = ?
-     WHERE user_id = ?`,
-    [String(name || "").trim(), mobile || null, parentName || null, address || null, id]
-  );
   return findById(id);
 };
 

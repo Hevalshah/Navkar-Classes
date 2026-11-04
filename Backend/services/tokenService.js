@@ -10,7 +10,12 @@ const getJwtSecret = () => {
   return process.env.JWT_SECRET;
 };
 
-const getRefreshSecret = () => process.env.JWT_REFRESH_SECRET || getJwtSecret();
+const getRefreshSecret = () => {
+  if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET === process.env.JWT_SECRET) {
+    throw new Error("A distinct JWT_REFRESH_SECRET is required");
+  }
+  return process.env.JWT_REFRESH_SECRET;
+};
 
 const buildJwtPayload = (account) => ({
   id: account.id,

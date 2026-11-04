@@ -9,7 +9,7 @@ const { xssProtection, errorMiddleware } = require("./middleware/securityMiddlew
 const contactRoutes = require("./routes/contactRoutes");
 
 // Environment variable validation
-const requiredEnv = ["PORT", "JWT_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "OFFICE_EMAIL"];
+const requiredEnv = ["PORT", "JWT_SECRET", "JWT_REFRESH_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "OFFICE_EMAIL"];
 requiredEnv.forEach((env) => {
   if (!process.env[env]) {
     console.warn(`[Warning] Required environment variable "${env}" is missing.`);
@@ -40,7 +40,15 @@ const spamLimiter = rateLimit({
 app.use("/api/contact", spamLimiter);
 app.use("/api/payments/create-order", spamLimiter);
 
-app.use(cors());
+const configuredOrigins = (process.env.FRONTEND_ORIGINS || "").split(",").map((origin) => origin.trim()).filter(Boolean);
+const developmentOrigins = process.env.NODE_ENV === "production" ? [] : ["http://localhost:3000", "http://127.0.0.1:3000"];
+const allowedOrigins = new Set([...configuredOrigins, ...developmentOrigins]);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    callback(new Error("Origin is not allowed by CORS"));
+  }
+}));
 app.use(express.json());
 
 // XSS protection
@@ -66,6 +74,18 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use(errorMiddleware);
 
 const startServer = async () => {
+  if (process.env.NODE_ENV === "production") {
+    const missingEnv = requiredEnv.filter((env) => !process.env[env]);
+    if (missingEnv.length) {
+      throw new Error(`Missing required production environment variables: ${missingEnv.join(", ")}`);
+    }
+    if (process.env.JWT_SECRET === process.env.JWT_REFRESH_SECRET) {
+      throw new Error("JWT_SECRET and JWT_REFRESH_SECRET must be different");
+    }
+    if (!configuredOrigins.length) {
+      throw new Error("FRONTEND_ORIGINS must contain at least one production frontend origin");
+    }
+  }
   await connectDB();
   await contactRoutes.verifySmtpConnection();
 

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -67,8 +68,8 @@ const StudentManagement = () => {
             try {
                 const headers = { "Authorization": `Bearer ${token}` };
                 const [standardsRes, batchesRes] = await Promise.all([
-                    fetch("http://localhost:5000/api/admin/standards", { headers }),
-                    fetch("http://localhost:5000/api/admin/batches", { headers })
+                    fetch(API_BASE_URL + "/api/admin/standards", { headers }),
+                    fetch(API_BASE_URL + "/api/admin/batches", { headers })
                 ]);
                 if (standardsRes.ok) setStandards(await standardsRes.json());
                 if (batchesRes.ok) setBatches(await batchesRes.json());
@@ -90,7 +91,7 @@ const StudentManagement = () => {
         if (selectedBatch) params.set("batchId", selectedBatch);
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/students?${params.toString()}`, {
+            const res = await fetch(API_BASE_URL + `/api/admin/students?${params.toString()}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             const data = await res.json();
@@ -155,7 +156,7 @@ const StudentManagement = () => {
         if (!studentToEdit) return;
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/students/${studentToEdit.id}`, {
+            const res = await fetch(API_BASE_URL + `/api/admin/students/${studentToEdit.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -177,7 +178,7 @@ const StudentManagement = () => {
         if (!studentToRemove) return;
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/students/${studentToRemove.id}`, {
+            const res = await fetch(API_BASE_URL + `/api/admin/students/${studentToRemove.id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });

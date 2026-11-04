@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -9,7 +10,7 @@ import "../Styles/pages.css";
 const FileViewerModal = ({ fileId, title, fileType, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const url = `http://localhost:5000/api/materials/view/${fileId}`;
+    const url = API_BASE_URL + `/api/materials/view/${fileId}`;
 
     const isPreviewable = ["pdf", "png", "jpg", "jpeg", "gif", "txt"].includes(fileType.toLowerCase());
 
@@ -85,7 +86,7 @@ const StudentMaterials = ({ user, handleLogout }) => {
     // Fetch student materials
     const fetchMaterials = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/materials", {
+            const res = await fetch(API_BASE_URL + "/api/materials", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setMaterials(await res.json());
@@ -95,7 +96,7 @@ const StudentMaterials = ({ user, handleLogout }) => {
     // Fetch subjects list
     const fetchSubjects = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/subjects");
+            const res = await fetch(API_BASE_URL + "/api/admin/subjects");
             if (res.ok) {
                 const data = await res.json();
                 if (user && user.standardId) {
@@ -263,21 +264,21 @@ const StaffMaterials = ({ user, handleLogout, role }) => {
     // Fetch lists
     const loadSubjects = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/subjects");
+            const res = await fetch(API_BASE_URL + "/api/admin/subjects");
             if (res.ok) setSubjects(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadBatches = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/batches");
+            const res = await fetch(API_BASE_URL + "/api/admin/batches");
             if (res.ok) setBatches(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadMaterials = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/materials", {
+            const res = await fetch(API_BASE_URL + "/api/materials", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setMaterials(await res.json());
@@ -328,7 +329,7 @@ const StaffMaterials = ({ user, handleLogout, role }) => {
     const handleDelete = async (id) => {
         if(window.confirm("Are you sure you want to delete this material?")) {
             try {
-                const res = await fetch(`http://localhost:5000/api/materials/${id}`, {
+                const res = await fetch(API_BASE_URL + `/api/materials/${id}`, {
                     method: "DELETE",
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -364,7 +365,7 @@ const StaffMaterials = ({ user, handleLogout, role }) => {
         try {
             if (formData.id) {
                 // UPDATE (UI details modification only, no file upload update required by specifications)
-                const res = await fetch(`http://localhost:5000/api/materials/${formData.id}`, {
+                const res = await fetch(API_BASE_URL + `/api/materials/${formData.id}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -396,7 +397,7 @@ const StaffMaterials = ({ user, handleLogout, role }) => {
                 body.append("subjectId", formData.subjectId);
                 body.append("batchId", formData.batchId);
 
-                const res = await fetch("http://localhost:5000/api/materials", {
+                const res = await fetch(API_BASE_URL + "/api/materials", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${token}` },
                     body

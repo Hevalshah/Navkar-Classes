@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -13,7 +14,7 @@ const StudentTimetable = ({ user, handleLogout }) => {
 
     const fetchTimetable = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/timetable", {
+            const res = await fetch(API_BASE_URL + "/api/timetable", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setLectures(await res.json());
@@ -115,35 +116,35 @@ const StaffTimetable = ({ user, handleLogout, role }) => {
 
     const loadStandards = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/standards");
+            const res = await fetch(API_BASE_URL + "/api/admin/standards");
             if (res.ok) setStandards(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadBatches = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/batches");
+            const res = await fetch(API_BASE_URL + "/api/admin/batches");
             if (res.ok) setBatches(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadSubjects = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/subjects");
+            const res = await fetch(API_BASE_URL + "/api/admin/subjects");
             if (res.ok) setSubjects(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadTeachers = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/teachers");
+            const res = await fetch(API_BASE_URL + "/api/admin/teachers");
             if (res.ok) setTeachers(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadSchedules = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/timetable", {
+            const res = await fetch(API_BASE_URL + "/api/timetable", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setSchedules(await res.json());
@@ -168,7 +169,7 @@ const StaffTimetable = ({ user, handleLogout, role }) => {
     const handleDelete = async (id) => {
         if(window.confirm("Are you sure you want to delete this schedule entry?")) {
             try {
-                const res = await fetch(`http://localhost:5000/api/timetable/${id}`, {
+                const res = await fetch(API_BASE_URL + `/api/timetable/${id}`, {
                     method: "DELETE",
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -184,7 +185,7 @@ const StaffTimetable = ({ user, handleLogout, role }) => {
     const handleSave = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch("http://localhost:5000/api/timetable", {
+            const res = await fetch(API_BASE_URL + "/api/timetable", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -12,7 +13,7 @@ const StudentAttendance = ({ user, handleLogout }) => {
 
     const fetchAttendanceHistory = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/attendance/history", {
+            const res = await fetch(API_BASE_URL + "/api/attendance/history", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setAttendanceRecords(await res.json());
@@ -134,7 +135,7 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
 
     const loadBatches = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/batches");
+            const res = await fetch(API_BASE_URL + "/api/admin/batches");
             if (res.ok) {
                 const data = await res.json();
                 setBatches(data);
@@ -148,7 +149,7 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
     const loadStudents = useCallback(async () => {
         if (!selectedBatch) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/attendance/students/${selectedBatch}`, {
+            const res = await fetch(API_BASE_URL + `/api/attendance/students/${selectedBatch}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -186,7 +187,7 @@ const StaffAttendance = ({ user, handleLogout, role }) => {
     const handleSave = async () => {
         if (!selectedBatch) return;
         try {
-            const res = await fetch("http://localhost:5000/api/attendance/submit", {
+            const res = await fetch(API_BASE_URL + "/api/attendance/submit", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -19,7 +20,7 @@ const StudentFeeHistory = ({ user, handleLogout }) => {
 
     const fetchPaymentHistory = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/fees", {
+            const res = await fetch(API_BASE_URL + "/api/fees", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setPaymentHistory(asArray(await res.json()));
@@ -167,17 +168,17 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
     const loadData = useCallback(async () => {
         try {
             // Load batches
-            const resB = await fetch("http://localhost:5000/api/admin/batches");
+            const resB = await fetch(API_BASE_URL + "/api/admin/batches");
             if (resB.ok) setBatches(asArray(await resB.json()));
 
             // Load students
-            const resS = await fetch("http://localhost:5000/api/admin/students", {
+            const resS = await fetch(API_BASE_URL + "/api/admin/students", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (resS.ok) setStudents(asArray(await resS.json(), "students"));
 
             // Load all fees records
-            const resF = await fetch("http://localhost:5000/api/fees", {
+            const resF = await fetch(API_BASE_URL + "/api/fees", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (resF.ok) setPayments(asArray(await resF.json()));
@@ -205,7 +206,7 @@ const StaffFeeManagement = ({ user, handleLogout, role }) => {
         if(!amt || amt <= 0) return;
 
         try {
-            const res = await fetch("http://localhost:5000/api/fees/pay", {
+            const res = await fetch(API_BASE_URL + "/api/fees/pay", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

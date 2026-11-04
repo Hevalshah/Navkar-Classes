@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -56,21 +57,21 @@ const AdminDashboard = () => {
     // Load Data
     const loadStandards = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/standards");
+            const res = await fetch(API_BASE_URL + "/api/admin/standards");
             if (res.ok) setStandards(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadBatches = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/batches");
+            const res = await fetch(API_BASE_URL + "/api/admin/batches");
             if (res.ok) setBatches(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadSubjects = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/subjects");
+            const res = await fetch(API_BASE_URL + "/api/admin/subjects");
             if (res.ok) setSubjects(await res.json());
         } catch (e) { console.error(e); }
     };
@@ -137,15 +138,15 @@ const AdminDashboard = () => {
         let body = {};
 
         if (activeTab === "standards") {
-            url = modalMode === "add" ? "http://localhost:5000/api/admin/standards" : `http://localhost:5000/api/admin/standards/${editId}`;
+            url = modalMode === "add" ? API_BASE_URL + "/api/admin/standards" : API_BASE_URL + `/api/admin/standards/${editId}`;
             method = modalMode === "add" ? "POST" : "PUT";
             body = { name: stdName };
         } else if (activeTab === "batches") {
-            url = modalMode === "add" ? "http://localhost:5000/api/admin/batches" : `http://localhost:5000/api/admin/batches/${editId}`;
+            url = modalMode === "add" ? API_BASE_URL + "/api/admin/batches" : API_BASE_URL + `/api/admin/batches/${editId}`;
             method = modalMode === "add" ? "POST" : "PUT";
             body = { name: batchName, standardId: parseInt(batchStdId) };
         } else if (activeTab === "subjects") {
-            url = modalMode === "add" ? "http://localhost:5000/api/admin/subjects" : `http://localhost:5000/api/admin/subjects/${editId}`;
+            url = modalMode === "add" ? API_BASE_URL + "/api/admin/subjects" : API_BASE_URL + `/api/admin/subjects/${editId}`;
             method = modalMode === "add" ? "POST" : "PUT";
             body = { name: subName, standardId: parseInt(subStdId) };
         }
@@ -180,7 +181,7 @@ const AdminDashboard = () => {
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this item?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/${activeTab}/${id}`, {
+            const res = await fetch(API_BASE_URL + `/api/admin/${activeTab}/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });

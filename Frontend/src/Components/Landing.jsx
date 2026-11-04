@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/navkar-logo.png";
@@ -31,7 +32,7 @@ const Landing = () => {
         setIsSending(true);
         setToastMsg("");
         try {
-            const res = await fetch("http://localhost:5000/api/contact", {
+            const res = await fetch(API_BASE_URL + "/api/contact", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

@@ -11,6 +11,9 @@ const authenticateJWT = async (req, res, next) => {
   }
 
   try {
+    if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET === process.env.JWT_REFRESH_SECRET) {
+      throw new Error("JWT secrets are missing or not distinct");
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     if (decoded.role === "teacher") {

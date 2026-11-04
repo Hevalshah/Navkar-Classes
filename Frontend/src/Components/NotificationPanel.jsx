@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useEffect, useState, useCallback } from "react";
 import "../Styles/dashboard.css";
 
@@ -35,7 +36,7 @@ const NotificationPanel = () => {
           ? `/${role}`
           : "";
 
-      const res = await fetch(`http://localhost:5000/api/notifications${roleEndpoint}`, {
+      const res = await fetch(API_BASE_URL + `/api/notifications${roleEndpoint}`, {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (!res.ok) throw new Error("Failed");
@@ -66,7 +67,7 @@ const NotificationPanel = () => {
     const t = token();
     if (!t) return;
     try {
-      await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+      await fetch(API_BASE_URL + `/api/notifications/${id}/read`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${t}` },
       });
@@ -80,7 +81,7 @@ const NotificationPanel = () => {
     const t = token();
     if (!t) return;
     try {
-      await fetch("http://localhost:5000/api/notifications/read-all", {
+      await fetch(API_BASE_URL + "/api/notifications/read-all", {
         method: "PUT",
         headers: { Authorization: `Bearer ${t}` },
       });

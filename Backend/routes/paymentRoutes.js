@@ -19,20 +19,17 @@ const notifyAllTeachers = async ({ message, type, referenceId, uniqueKeyPrefix }
   });
 };
 
-// Instantiate Razorpay client
-// Using fallback credentials for clean boot if not defined in .env yet
-const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder";
-const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "placeholder_secret";
-
-const razorpay = new Razorpay({
-  key_id: razorpayKeyId,
-  key_secret: razorpayKeySecret
-});
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+const razorpay = razorpayKeyId && razorpayKeySecret
+  ? new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret })
+  : null;
 
 // ===============================
 // CREATE PAYMENT ORDER
 // ===============================
 router.post("/create-order", authMiddleware, authorizeRoles("student"), async (req, res, next) => {
+  if (!razorpay) return res.status(503).json({ message: "Online payments are not configured." });
   try {
     // 1. Fetch total fee from students table
     const [studentRows] = await pool.execute(
@@ -87,6 +84,7 @@ router.post("/create-order", authMiddleware, authorizeRoles("student"), async (r
 // VERIFY PAYMENT SIGNATURE
 // ===============================
 router.post("/verify", authMiddleware, async (req, res, next) => {
+  if (!razorpay) return res.status(503).json({ message: "Online payments are not configured." });
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, method } = req.body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {

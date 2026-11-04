@@ -1,5 +1,6 @@
+import { API_BASE_URL } from "../config/api";
 export const registerUser = async (data) => {
-  const res = await fetch("http://localhost:5000/api/auth/register", {
+  const res = await fetch(API_BASE_URL + "/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -13,7 +14,7 @@ export const registerUser = async (data) => {
 };
 
 export const registerStudent = async (data, token) => {
-  const res = await fetch("http://localhost:5000/api/auth/register-student", {
+  const res = await fetch(API_BASE_URL + "/api/auth/register-student", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -30,7 +31,7 @@ export const registerStudent = async (data, token) => {
 };
 
 export const getProfile = async (token) => {
-  const res = await fetch("http://localhost:5000/api/auth/me", {
+  const res = await fetch(API_BASE_URL + "/api/auth/me", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -51,7 +52,7 @@ export const getProfile = async (token) => {
 };
 
 export const getAdminProfile = async (token) => {
-  const res = await fetch("http://localhost:5000/api/admin/profile", {
+  const res = await fetch(API_BASE_URL + "/api/admin/profile", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -64,7 +65,7 @@ export const getAdminProfile = async (token) => {
 };
 
 export const updateProfile = async (token, data) => {
-  const res = await fetch("http://localhost:5000/api/auth/update-profile", {
+  const res = await fetch(API_BASE_URL + "/api/auth/update-profile", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -81,7 +82,7 @@ export const updateProfile = async (token, data) => {
 };
 
 export const changePassword = async (token, data) => {
-  const res = await fetch("http://localhost:5000/api/auth/change-password", {
+  const res = await fetch(API_BASE_URL + "/api/auth/change-password", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -98,7 +99,7 @@ export const changePassword = async (token, data) => {
 };
 
 export const loginUser = async (data) => {
-  const res = await fetch("http://localhost:5000/api/auth/login", {
+  const res = await fetch(API_BASE_URL + "/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -109,7 +110,7 @@ export const loginUser = async (data) => {
 };
 
 export const loginAdmin = async (data) => {
-  const res = await fetch("http://localhost:5000/api/admin/login", {
+  const res = await fetch(API_BASE_URL + "/api/admin/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -120,7 +121,7 @@ export const loginAdmin = async (data) => {
 };
 
 export const refreshUserToken = async (refreshToken) => {
-  const res = await fetch("http://localhost:5000/api/auth/refresh", {
+  const res = await fetch(API_BASE_URL + "/api/auth/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken })
@@ -131,7 +132,7 @@ export const refreshUserToken = async (refreshToken) => {
 };
 
 export const refreshAdminToken = async (refreshToken) => {
-  const res = await fetch("http://localhost:5000/api/admin/refresh", {
+  const res = await fetch(API_BASE_URL + "/api/admin/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken })
@@ -142,7 +143,7 @@ export const refreshAdminToken = async (refreshToken) => {
 };
 
 export const logoutUser = async (token) => {
-  const res = await fetch("http://localhost:5000/api/auth/logout", {
+  const res = await fetch(API_BASE_URL + "/api/auth/logout", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -155,7 +156,7 @@ export const logoutUser = async (token) => {
 };
 
 export const logoutAdmin = async (token) => {
-  const res = await fetch("http://localhost:5000/api/admin/logout", {
+  const res = await fetch(API_BASE_URL + "/api/admin/logout", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -168,7 +169,7 @@ export const logoutAdmin = async (token) => {
 };
 
 export const forgotPassword = async (email) => {
-  const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
+  const res = await fetch(API_BASE_URL + "/api/auth/forgot-password", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(email)

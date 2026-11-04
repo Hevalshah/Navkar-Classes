@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -13,7 +14,7 @@ const StudentTests = ({ user, handleLogout }) => {
 
     const fetchTests = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/tests", {
+            const res = await fetch(API_BASE_URL + "/api/tests", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setTests(await res.json());
@@ -31,7 +32,7 @@ const StudentTests = ({ user, handleLogout }) => {
         const confirmStart = window.confirm(`Important Notice:\n\nThis will open the online exam document for "${test.title}".\nDo you want to start this assessment now?`);
         if (confirmStart) {
             // Open file in new window/tab
-            const viewUrl = `http://localhost:5000/api/tests/view/${test.id}`;
+            const viewUrl = API_BASE_URL + `/api/tests/view/${test.id}`;
             window.open(viewUrl, "_blank");
         }
     };
@@ -158,21 +159,21 @@ const StaffTests = ({ user, handleLogout, role }) => {
 
     const loadSubjects = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/subjects");
+            const res = await fetch(API_BASE_URL + "/api/admin/subjects");
             if (res.ok) setSubjects(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadBatches = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/admin/batches");
+            const res = await fetch(API_BASE_URL + "/api/admin/batches");
             if (res.ok) setBatches(await res.json());
         } catch (e) { console.error(e); }
     };
 
     const loadTests = useCallback(async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/tests", {
+            const res = await fetch(API_BASE_URL + "/api/tests", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -188,7 +189,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
     const loadSubmissions = useCallback(async () => {
         if (!selectedTestId) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/tests/${selectedTestId}/submissions`, {
+            const res = await fetch(API_BASE_URL + `/api/tests/${selectedTestId}/submissions`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) setSubmissions(await res.json());
@@ -214,7 +215,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
     const handleDelete = async (id) => {
         if(window.confirm("Are you sure you want to delete this test?")) {
             try {
-                const res = await fetch(`http://localhost:5000/api/tests/${id}`, {
+                const res = await fetch(API_BASE_URL + `/api/tests/${id}`, {
                     method: "DELETE",
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -243,7 +244,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
         body.append("instructions", formData.instructions);
 
         try {
-            const res = await fetch("http://localhost:5000/api/tests", {
+            const res = await fetch(API_BASE_URL + "/api/tests", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` },
                 body
@@ -263,7 +264,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
         const score = window.prompt(`Enter marks obtained for ${sub.studentName} (Out of total marks):`);
         if (score !== null && score !== "") {
             try {
-                const res = await fetch("http://localhost:5000/api/tests/grade", {
+                const res = await fetch(API_BASE_URL + "/api/tests/grade", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -345,7 +346,7 @@ const StaffTests = ({ user, handleLogout, role }) => {
                                                     <td>
                                                         <div style={{ display: 'flex', gap: '8px' }}>
                                                             {t.file_path && (
-                                                                <a href={`http://localhost:5000/api/tests/view/${t.id}`} target="_blank" rel="noopener noreferrer" className="portal-btn outline-secondary" style={{ padding: '4px 8px', fontSize: '12px' }}>
+                                                                <a href={API_BASE_URL + `/api/tests/view/${t.id}`} target="_blank" rel="noopener noreferrer" className="portal-btn outline-secondary" style={{ padding: '4px 8px', fontSize: '12px' }}>
                                                                     <i className="fas fa-eye"></i> View Paper
                                                                 </a>
                                                             )}

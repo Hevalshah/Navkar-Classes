@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -32,7 +33,7 @@ const PayFees = () => {
 
     const loadFeesStatus = async (userData) => {
         try {
-            const res = await fetch("http://localhost:5000/api/fees", {
+            const res = await fetch(API_BASE_URL + "/api/fees", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -106,7 +107,7 @@ const PayFees = () => {
 
         try {
             // 1. Create order on backend
-            const orderRes = await fetch("http://localhost:5000/api/payments/create-order", {
+            const orderRes = await fetch(API_BASE_URL + "/api/payments/create-order", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -135,7 +136,7 @@ const PayFees = () => {
                     try {
                         setIsPaying(true);
                         // 3. Verify signature on backend
-                        const verifyRes = await fetch("http://localhost:5000/api/payments/verify", {
+                        const verifyRes = await fetch(API_BASE_URL + "/api/payments/verify", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",

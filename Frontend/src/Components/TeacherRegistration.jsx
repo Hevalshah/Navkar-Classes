@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -47,7 +48,7 @@ const TeacherRegistration = () => {
     const loadTeachers = useCallback(async () => {
         setLoadingTeachers(true);
         try {
-            const res = await fetch("http://localhost:5000/api/admin/teachers", {
+            const res = await fetch(API_BASE_URL + "/api/admin/teachers", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -153,7 +154,7 @@ const TeacherRegistration = () => {
             let res;
             if (editingTeacher) {
                 // Update existing teacher
-                res = await fetch(`http://localhost:5000/api/admin/teachers/${editingTeacher.id}`, {
+                res = await fetch(API_BASE_URL + `/api/admin/teachers/${editingTeacher.id}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -168,7 +169,7 @@ const TeacherRegistration = () => {
                     setIsSubmitting(false);
                     return;
                 }
-                res = await fetch("http://localhost:5000/api/admin/teachers", {
+                res = await fetch(API_BASE_URL + "/api/admin/teachers", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -200,7 +201,7 @@ const TeacherRegistration = () => {
     const confirmDelete = async () => {
         if (!teacherToDelete) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/teachers/${teacherToDelete.id}`, {
+            const res = await fetch(API_BASE_URL + `/api/admin/teachers/${teacherToDelete.id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });

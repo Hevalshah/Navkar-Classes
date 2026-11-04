@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
@@ -67,10 +68,10 @@ const StudentRegistration = () => {
             try {
                 const token = localStorage.getItem("token");
                 const headers = { "Authorization": `Bearer ${token}` };
-                const stdRes = await fetch("http://localhost:5000/api/admin/standards", {
+                const stdRes = await fetch(API_BASE_URL + "/api/admin/standards", {
                     headers
                 });
-                const batchRes = await fetch("http://localhost:5000/api/admin/batches", {
+                const batchRes = await fetch(API_BASE_URL + "/api/admin/batches", {
                     headers
                 });
                 if (stdRes.ok) {

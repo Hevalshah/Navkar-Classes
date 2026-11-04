@@ -2,7 +2,7 @@ import { API_BASE_URL } from "../config/api";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import { getProfile, logoutUser } from "../Services/authService";
+import { getAdminProfile, getProfile, logoutUser } from "../Services/authService";
 import "../Styles/dashboard.css";
 import "../Styles/pages.css";
 
@@ -40,6 +40,7 @@ const StudentManagement = () => {
     });
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [profileError, setProfileError] = useState("");
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -51,10 +52,13 @@ const StudentManagement = () => {
             }
 
             try {
-                const profile = await getProfile(token);
+                const profile = storedRole === "admin"
+                    ? await getAdminProfile(token)
+                    : await getProfile(token);
                 setUser(profile);
                 if (profile.role) setRole(profile.role);
             } catch (profileError) {
+                setProfileError(profileError.message || "Profile request failed.");
                 setUser({ ...fallbackUser, role: storedRole });
             } finally {
                 setLoading(false);
@@ -94,9 +98,10 @@ const StudentManagement = () => {
             const res = await fetch(API_BASE_URL + `/api/admin/students?${params.toString()}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message);
-            setStudents(data.students || []);
+            const data = await res.json().catch(() => null);
+            if (!res.ok) throw new Error(data?.message || `Student list request failed (HTTP ${res.status}).`);
+            if (!Array.isArray(data?.students)) throw new Error("Student list response was not in the expected format.");
+            setStudents(data.students);
             setPagination(data.pagination || { page: 1, total: 0, totalPages: 1 });
         } catch (studentError) {
             setError(studentError.message || "Could not load students.");
@@ -208,6 +213,12 @@ const StudentManagement = () => {
                         <h2><i className="fas fa-user-graduate"></i> Manage Students</h2>
                         <span className="subtitle">Registered students by class and batch</span>
                     </div>
+
+                    {profileError && (
+                        <div className="portal-badge danger" style={{ display: "block", marginBottom: "12px", padding: "12px 16px", textAlign: "center" }}>
+                            Profile request failed: {profileError}
+                        </div>
+                    )}
 
                     {(message || error) && (
                         <div

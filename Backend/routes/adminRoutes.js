@@ -388,20 +388,24 @@ router.delete("/students/:id", authMiddleware, adminOnly, async (req, res) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    await connection.execute("DELETE FROM notification_reads WHERE user_id = ?", [req.params.id]);
-    await connection.execute("DELETE FROM notifications WHERE role = 'student' AND user_id = ?", [req.params.id]);
-    const [result] = await connection.execute(
-      "DELETE FROM users WHERE id = ? AND role = 'student'",
+    const [studentRows] = await connection.execute(
+      `SELECT u.id
+       FROM users u
+       JOIN students st ON st.user_id = u.id
+       WHERE u.id = ? AND u.role = 'student'
+       FOR UPDATE`,
       [req.params.id]
     );
-
-    if (result.affectedRows === 0) {
+    if (studentRows.length === 0) {
       await connection.rollback();
       return res.status(404).json({ message: "Student not found" });
     }
 
+    await connection.execute("UPDATE users SET is_active = FALSE WHERE id = ? AND role = 'student'", [req.params.id]);
+    await connection.execute("UPDATE students SET is_active = FALSE WHERE user_id = ?", [req.params.id]);
+
     await connection.commit();
-    res.json({ message: "Student deleted successfully" });
+    res.json({ message: "Student account deactivated; existing records and fee history were retained." });
   } catch (err) {
     await connection.rollback();
     res.status(500).json({ message: "Error deleting student" });

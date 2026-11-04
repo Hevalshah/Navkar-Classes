@@ -181,6 +181,7 @@ test("isolated backend integration suite", async (t) => {
     app.use("/api/materials", materialRoutes);
     app.use("/api/tests", testRoutes);
     app.use("/api/attendance", attendanceRoutes);
+    app.use("/api/admin", require("../routes/adminAuthRoutes"));
     app.use("/api/admin", adminRoutes);
     app.use("/api/fees", feeRoutes);
     app.use("/api/payments", paymentRoutes);
@@ -196,7 +197,18 @@ test("isolated backend integration suite", async (t) => {
     await t.test("authentication, JWT and role denial", async () => {
       assert.equal((await request(base, "/api/fees", studentToken)).status, 200);
       assert.equal((await request(base, "/api/fees", "invalid.token.value")).status, 401);
+      assert.equal((await request(base, "/api/auth/me", adminToken)).status, 403, "the general profile route intentionally denies admin tokens");
+      assert.equal((await request(base, "/api/admin/profile", adminToken)).status, 200, "admins use their dedicated profile route");
       assert.equal((await request(base, "/api/attendance/submit", studentToken, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ batchId: fixture.batchId, date: "2098-01-01", attendanceData: [] }) })).status, 403);
+    });
+
+    await t.test("admin student list returns the expected paginated response", async () => {
+      const response = await request(base, "/api/admin/students?limit=100&includeInactive=true", adminToken);
+      const data = await response.json();
+      assert.equal(response.status, 200);
+      assert.ok(Array.isArray(data.students));
+      assert.ok(data.students.some((student) => Number(student.id) === Number(fixture.studentId)));
+      assert.ok(data.pagination);
     });
 
     await t.test("teacher profile updates use teachers.id despite numeric ID collision", async () => {
@@ -479,7 +491,7 @@ test("isolated backend integration suite", async (t) => {
       assert.equal((await otherBatchSubmissions.json()).some((row) => Number(row.studentId) === Number(syntheticStudentId)), true);
     });
 
-    await t.test("only admins can change student enrollment or delete student accounts", async () => {
+    await t.test("only admins can change enrollment or deactivate student accounts without deleting history", async () => {
       const teacherDetails = await request(base, `/api/admin/students/${syntheticStudentId}`, teacherToken, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: `Teacher Edited Student ${runId}`, email: syntheticStudentEmail, mobile: "0000000002", standardId: fixture.standardId, batchId: altBatchId, isActive: true })
@@ -496,8 +508,21 @@ test("isolated backend integration suite", async (t) => {
         body: JSON.stringify({ name: `Synthetic Cross-Batch Student ${runId}`, email: syntheticStudentEmail, standardId: fixture.standardId, batchId: fixture.batchId, isActive: true })
       });
       assert.equal(adminChange.status, 200);
-      assert.equal((await request(base, `/api/admin/students/${syntheticStudentId}`, adminToken, { method: "DELETE" })).status, 200);
-      syntheticStudentId = null;
+      const historyReference = `delete-history-${runId}`;
+      await guardedWrite(
+        "INSERT INTO fee_records (student_id, amount, paid_date, payment_mode, reference_no, status) VALUES (?, 25, CURDATE(), 'Integration', ?, 'Paid')",
+        [syntheticStudentId, historyReference]
+      );
+      const deactivated = await request(base, `/api/admin/students/${syntheticStudentId}`, adminToken, { method: "DELETE" });
+      assert.equal(deactivated.status, 200);
+      const [[accountState]] = await guardedRead(
+        "SELECT u.is_active AS user_active, st.is_active AS student_active FROM users u JOIN students st ON st.user_id = u.id WHERE u.id = ?",
+        [syntheticStudentId]
+      );
+      assert.equal(Number(accountState.user_active), 0);
+      assert.equal(Number(accountState.student_active), 0);
+      const [retainedHistory] = await guardedRead("SELECT id FROM fee_records WHERE student_id = ? AND reference_no = ?", [syntheticStudentId, historyReference]);
+      assert.equal(retainedHistory.length, 1, "deactivation must retain related fee history");
     });
   } finally {
     if (server) {

@@ -39,7 +39,10 @@ export const getProfile = async (token) => {
     }
   });
 
-  if (!res.ok) throw new Error("Failed to fetch profile");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(`${errorData.message || "Profile request failed"} (HTTP ${res.status})`);
+  }
   const userData = await res.json();
   const userId = userData.id ?? userData._id;
   if (userId) {
@@ -60,7 +63,10 @@ export const getAdminProfile = async (token) => {
     }
   });
 
-  if (!res.ok) throw new Error("Failed to fetch admin profile");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(`${errorData.message || "Admin profile request failed"} (HTTP ${res.status})`);
+  }
   return res.json();
 };
 

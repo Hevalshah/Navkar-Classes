@@ -523,6 +523,8 @@ test("isolated backend integration suite", async (t) => {
       assert.equal(Number(accountState.student_active), 0);
       const [retainedHistory] = await guardedRead("SELECT id FROM fee_records WHERE student_id = ? AND reference_no = ?", [syntheticStudentId, historyReference]);
       assert.equal(retainedHistory.length, 1, "deactivation must retain related fee history");
+      const activeStudentList = await request(base, "/api/admin/students?limit=100", adminToken);
+      assert.equal((await activeStudentList.json()).students.some((row) => Number(row.id) === Number(syntheticStudentId)), false, "deactivated students must disappear from the active list");
     });
   } finally {
     if (server) {

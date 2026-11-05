@@ -33,7 +33,7 @@ const StudentRegistration = () => {
     const loadStudents = useCallback(async () => {
         setStudentsLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/admin/students?limit=100&includeInactive=true`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/students?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await response.json().catch(() => null);
